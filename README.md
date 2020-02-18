@@ -7,9 +7,9 @@ Minion is a naive distributed job scheduler.
 ## Endpoints
 
 ```
-GET /v1/ds/ping
-GET /v1/ds/version
-GET /v1/ds/metrics
+GET /v1/minion/ping
+GET /v1/minion/version
+GET /v1/minion/metrics
 ```
 
 ## Usage

@@ -1,0 +1,6 @@
+{ 
+  "listenAddress": ":8080",
+  "token": "{{ .api_token }}",
+  "logLevel": "{{ .log_level }}",
+  "org": "{{ .spinup_org }}"
+}
