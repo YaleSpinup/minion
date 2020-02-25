@@ -1,0 +1,13 @@
+{ 
+  "listenAddress": ":8080",
+  "accounts": {
+    "someaccount": {
+      "region": "us-east-1",
+      "akid": "xxxxxxxxxxxxxxxxxxxxxxxx",
+      "secret": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+    }
+  },
+  "token": "xxxxxx",
+  "logLevel": "info",
+  "org": "localdev"
+}
