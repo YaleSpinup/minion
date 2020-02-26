@@ -1,0 +1,41 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minion-redis
+  labels:
+    app: minion
+    tier: redis
+spec:
+  ports:
+    - port: 6379
+  selector:
+    app: minion
+    tier: redis
+---
+apiVersion: apps/v1 
+kind: Deployment
+metadata:
+  name: minion-redis
+  labels:
+    app: minion
+    tier: redis
+spec:
+  selector:
+    matchLabels:
+      app: minion
+      tier: redis
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: minion
+        tier: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:5.0
+        ports:
+        - containerPort: 6379
+          name: redis

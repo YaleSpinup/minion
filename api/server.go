@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/YaleSpinup/minion/common"
+	"github.com/YaleSpinup/minion/jobs"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
@@ -19,10 +20,17 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+type jobRunner struct{}
+
+type refreshRunner struct {
+}
+
 type server struct {
-	router  *mux.Router
-	version common.Version
-	context context.Context
+	accounts       map[string]struct{}
+	context        context.Context
+	jobsRepository jobs.Repository
+	router         *mux.Router
+	version        common.Version
 }
 
 // Org will carry throughout the api and get tagged on resources
@@ -35,9 +43,10 @@ func NewServer(config common.Config) error {
 	defer cancel()
 
 	s := server{
-		router:  mux.NewRouter(),
-		version: config.Version,
-		context: ctx,
+		accounts: make(map[string]struct{}),
+		router:   mux.NewRouter(),
+		version:  config.Version,
+		context:  ctx,
 	}
 
 	if config.Org == "" {
@@ -45,10 +54,33 @@ func NewServer(config common.Config) error {
 	}
 	Org = config.Org
 
+	for name, c := range config.Accounts {
+		log.Debugf("configuring account %s with %+v", name, c)
+		s.accounts[name] = c
+	}
+
+	repo := config.JobsRepository
+	log.Debugf("Creating new JobsRepository of type %s with configuration %+v (org: %s)", repo.Type, repo.Config, Org)
+
+	switch repo.Type {
+	case "s3":
+		jr, err := jobs.NewDefaultRepository(repo.Config)
+		if err != nil {
+			return err
+		}
+		jr.Prefix = jr.Prefix + "/" + Org
+		s.jobsRepository = jr
+	default:
+		return errors.New("failed to determine jobs repository type, or type not supported: " + repo.Type)
+	}
+
+	// start job refresher
+	// err := refreshJobs()
+
 	publicURLs := map[string]string{
-		"/v1/ds/ping":    "public",
-		"/v1/ds/version": "public",
-		"/v1/ds/metrics": "public",
+		"/v1/minion/ping":    "public",
+		"/v1/minion/version": "public",
+		"/v1/minion/metrics": "public",
 	}
 
 	// load routes
