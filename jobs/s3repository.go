@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/YaleSpinup/ds-api/apierror"
+	"github.com/YaleSpinup/minion/apierror"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"

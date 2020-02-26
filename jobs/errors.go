@@ -1,7 +1,7 @@
 package jobs
 
 import (
-	"github.com/YaleSpinup/s3-api/apierror"
+	"github.com/YaleSpinup/minion/apierror"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/pkg/errors"
