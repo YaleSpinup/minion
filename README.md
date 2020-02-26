@@ -10,6 +10,12 @@ Minion is a naive distributed job scheduler.
 GET /v1/minion/ping
 GET /v1/minion/version
 GET /v1/minion/metrics
+
+GET /v1/minion/{account}/jobs
+POST /v1/minion/{account}/jobs
+GET /v1/minion/{account}/jobs/{id}
+PUT /v1/minion/{account}/jobs/{id}
+DELETE /v1/minion/{account}/jobs/{id}
 ```
 
 ## Usage

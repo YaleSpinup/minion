@@ -162,10 +162,6 @@ func (s *S3Repository) Create(ctx context.Context, account string, job *Job) (*J
 	// generate a new random ID for the job
 	job.ID = NewID()
 
-	// set the created at to right now
-	now := time.Now().Truncate(time.Second)
-	job.CreatedAt = &now
-
 	return s.Update(ctx, account, job.ID, job)
 }
 

@@ -31,8 +31,6 @@ type mockS3Client struct {
 var testJobs = map[string]Job{
 	"a6d1b5a6-3a76-4d52-8856-b752afea563a": Job{
 		ID:          "a6d1b5a6-3a76-4d52-8856-b752afea563a",
-		CreatedAt:   &testTime,
-		CreatedBy:   "hetfield",
 		Description: "first studio album",
 		Details: map[string]string{
 			"1":  "hit the lights",
@@ -48,15 +46,13 @@ var testJobs = map[string]Job{
 		},
 		Enabled:            true,
 		ModifiedAt:         &testTime,
-		ModifiedBy:         "mustaine",
+		ModifiedBy:         "hetfield",
 		Name:               "kill 'em all",
 		Group:              "metallica",
 		ScheduleExpression: "00 00 25 07 *",
 	},
 	"55ac40d3-a902-4c70-a5b7-3e4a8679e315": Job{
 		ID:          "55ac40d3-a902-4c70-a5b7-3e4a8679e315",
-		CreatedAt:   &testTime,
-		CreatedBy:   "hetfield",
 		Description: "second studio album",
 		Details: map[string]string{
 			"1": "fight fire with fire",
@@ -77,8 +73,6 @@ var testJobs = map[string]Job{
 	},
 	"f2e4ad2f-b130-4d48-83a1-2d8e842e6eec": Job{
 		ID:          "f2e4ad2f-b130-4d48-83a1-2d8e842e6eec",
-		CreatedAt:   &testTime,
-		CreatedBy:   "hetfield",
 		Description: "third studio album",
 		Details: map[string]string{
 			"1": "battery",
@@ -99,8 +93,6 @@ var testJobs = map[string]Job{
 	},
 	"30b83d8a-163d-429a-86d8-beb34c266078": Job{
 		ID:          "30b83d8a-163d-429a-86d8-beb34c266078",
-		CreatedAt:   &testTime,
-		CreatedBy:   "hetfield",
 		Description: "fourth studio album",
 		Details: map[string]string{
 			"1": "blackened",
@@ -241,8 +233,6 @@ func TestCreate(t *testing.T) {
 			expected = nil
 		} else {
 			expected = &Job{
-				CreatedAt:          input.CreatedAt,
-				CreatedBy:          input.CreatedBy,
 				Description:        input.Description,
 				Details:            input.Details,
 				Enabled:            input.Enabled,
@@ -268,12 +258,6 @@ func TestCreate(t *testing.T) {
 			t.Errorf("expected %+v, got nil", expected)
 			continue
 		}
-
-		// override created at
-		if j.CreatedAt == nil {
-			t.Error("expected created at to be set, got nil")
-		}
-		expected.CreatedAt = j.CreatedAt
 
 		// override modified at
 		if j.ModifiedAt == nil {
@@ -369,8 +353,6 @@ func TestUpdate(t *testing.T) {
 		} else {
 			inputId = input.ID
 			expected = &Job{
-				CreatedAt:          input.CreatedAt,
-				CreatedBy:          input.CreatedBy,
 				Description:        input.Description,
 				Details:            input.Details,
 				Enabled:            input.Enabled,
@@ -400,12 +382,6 @@ func TestUpdate(t *testing.T) {
 			t.Errorf("expected %+v, got nil", expected)
 			continue
 		}
-
-		// override created at
-		if j.CreatedAt == nil {
-			t.Error("expected created at to be set, got nil")
-		}
-		expected.CreatedAt = j.CreatedAt
 
 		// override modified at
 		if j.ModifiedAt == nil {
@@ -438,8 +414,6 @@ func TestGet(t *testing.T) {
 
 	for k, v := range testJobs {
 		expected := &Job{
-			CreatedAt:          v.CreatedAt,
-			CreatedBy:          v.CreatedBy,
 			Description:        v.Description,
 			Details:            v.Details,
 			Enabled:            v.Enabled,

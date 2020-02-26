@@ -11,25 +11,20 @@ func TestJobUnmarshalJSON(t *testing.T) {
 	var rawJob = []byte(`
 	{
 		"id": "08d754ba-8540-4fdc-92f3-47950c1cdb1c",
-		"created_at": "2013-06-19T19:14:01.123Z",
-		"created_by": "zbrannigan",
 		"description": "Alien sightings",
 		"details": {
 			"instance_id": "i-derpderpderp"
 		},
 		"group": "folder1",
 		"modified_at": "2015-11-21T04:19:01.123Z",
-		"modified_by": "kkroker",
+		"modified_by": "zbrannigan",
 		"name": "alien-sightings-dataset",
 		"schedule_expression": "@hourly",
 		"enabled": true
 	}`)
 
-	var createdAt, _ = time.Parse(time.RFC3339, "2013-06-19T19:14:01.000Z")
 	var modifiedAt, _ = time.Parse(time.RFC3339, "2015-11-21T04:19:01.000Z")
 	var testJob = &Job{
-		CreatedAt:   &createdAt,
-		CreatedBy:   "zbrannigan",
 		Description: "Alien sightings",
 		Details: map[string]string{
 			"instance_id": "i-derpderpderp",
@@ -37,7 +32,7 @@ func TestJobUnmarshalJSON(t *testing.T) {
 		Group:              "folder1",
 		ID:                 "08d754ba-8540-4fdc-92f3-47950c1cdb1c",
 		ModifiedAt:         &modifiedAt,
-		ModifiedBy:         "kkroker",
+		ModifiedBy:         "zbrannigan",
 		Name:               "alien-sightings-dataset",
 		ScheduleExpression: "@hourly",
 		Enabled:            true,
@@ -56,21 +51,6 @@ func TestJobUnmarshalJSON(t *testing.T) {
 	// bad json
 	if err := out.UnmarshalJSON([]byte("{")); err == nil {
 		t.Error("expected error for bad json, got nil")
-	}
-
-	// created_at type
-	if err := out.UnmarshalJSON([]byte(`{"created_at":false}`)); err == nil {
-		t.Error("expected error for bad created_at, got nil")
-	}
-
-	// created_at date
-	if err := out.UnmarshalJSON([]byte(`{"created_at":"12345"}`)); err == nil {
-		t.Error("expected error for bad created_at date, got nil")
-	}
-
-	// created_by type
-	if err := out.UnmarshalJSON([]byte(`{"created_by":false}`)); err == nil {
-		t.Error("expected error for bad created_by, got nil")
 	}
 
 	// description type
@@ -141,19 +121,15 @@ func TestMetadataMarshalJSON(t *testing.T) {
 		err    error
 	}
 
-	createdAt, _ := time.Parse(time.RFC3339, "2013-06-19T19:14:01.123Z")
 	modifiedAt, _ := time.Parse(time.RFC3339, "2015-11-21T04:19:01.123Z")
-
 	tests := []test{
 		test{
 			Job{},
-			[]byte(`{"created_at":"","created_by":"","description":"","details":null,"group":"","id":"","modified_at":"","modified_by":"","name":"","schedule_expression":"","enabled":false}`),
+			[]byte(`{"description":"","details":null,"group":"","id":"","modified_at":"","modified_by":"","name":"","schedule_expression":"","enabled":false}`),
 			nil,
 		},
 		test{
 			Job{
-				CreatedAt:   &createdAt,
-				CreatedBy:   "zbrannigan",
 				Description: "Alien sightings",
 				Details: map[string]string{
 					"instance_id": "i-derpderpderp",
@@ -166,7 +142,7 @@ func TestMetadataMarshalJSON(t *testing.T) {
 				ScheduleExpression: "cron()",
 				Enabled:            true,
 			},
-			[]byte(`{"created_at":"2013-06-19T19:14:01Z","created_by":"zbrannigan","description":"Alien sightings","details":{"instance_id":"i-derpderpderp"},"group":"folder1","id":"08d754ba-8540-4fdc-92f3-47950c1cdb1c","modified_at":"2015-11-21T04:19:01Z","modified_by":"kkroker","name":"alien-sightings-dataset","schedule_expression":"cron()","enabled":true}`),
+			[]byte(`{"description":"Alien sightings","details":{"instance_id":"i-derpderpderp"},"group":"folder1","id":"08d754ba-8540-4fdc-92f3-47950c1cdb1c","modified_at":"2015-11-21T04:19:01Z","modified_by":"kkroker","name":"alien-sightings-dataset","schedule_expression":"cron()","enabled":true}`),
 			nil,
 		},
 	}

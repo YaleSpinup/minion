@@ -13,8 +13,6 @@ import (
 
 // Job is the detail about a job
 type Job struct {
-	CreatedBy          string
-	CreatedAt          *time.Time
 	Description        string
 	Details            map[string]string
 	Enabled            bool
@@ -47,32 +45,6 @@ func (m *Job) UnmarshalJSON(j []byte) error {
 	}
 
 	log.Debug("unmarshaled metadata into rawstrings")
-
-	if createdAt, ok := rawStrings["created_at"]; ok {
-		if ca, ok := createdAt.(string); !ok {
-			msg := fmt.Sprintf("created_at is not a string: %+v", rawStrings["created_at"])
-			return errors.New(msg)
-		} else {
-			if ca != "" {
-				t, err := time.Parse(time.RFC3339, ca)
-				if err != nil {
-					msg := fmt.Sprintf("failed to parse created at as time: %+v", t)
-					return errors.New(msg)
-				}
-				t = t.Truncate(time.Second)
-				m.CreatedAt = &t
-			}
-		}
-	}
-
-	if createdBy, ok := rawStrings["created_by"]; ok {
-		if s, ok := createdBy.(string); !ok {
-			msg := fmt.Sprintf("created_by is not a string: %+v", rawStrings["created_by"])
-			return errors.New(msg)
-		} else {
-			m.CreatedBy = s
-		}
-	}
 
 	if desc, ok := rawStrings["description"]; ok {
 		if s, ok := desc.(string); !ok {
@@ -184,19 +156,12 @@ func (m *Job) UnmarshalJSON(j []byte) error {
 
 // MarshalJSON is a custom JSON marshaller for a job
 func (m Job) MarshalJSON() ([]byte, error) {
-	createdAt := ""
-	if m.CreatedAt != nil {
-		createdAt = m.CreatedAt.Truncate(time.Second).Format(time.RFC3339)
-	}
-
 	modifiedAt := ""
 	if m.ModifiedAt != nil {
 		modifiedAt = m.ModifiedAt.Truncate(time.Second).Format(time.RFC3339)
 	}
 
 	job := struct {
-		CreatedAt          string            `json:"created_at"`
-		CreatedBy          string            `json:"created_by"`
 		Description        string            `json:"description"`
 		Details            map[string]string `json:"details"`
 		Group              string            `json:"group"`
@@ -206,7 +171,7 @@ func (m Job) MarshalJSON() ([]byte, error) {
 		Name               string            `json:"name"`
 		ScheduleExpression string            `json:"schedule_expression"`
 		Enabled            bool              `json:"enabled"`
-	}{createdAt, m.CreatedBy, m.Description, m.Details, m.Group, m.ID, modifiedAt, m.ModifiedBy, m.Name, m.ScheduleExpression, m.Enabled}
+	}{m.Description, m.Details, m.Group, m.ID, modifiedAt, m.ModifiedBy, m.Name, m.ScheduleExpression, m.Enabled}
 
 	return json.Marshal(job)
 }
