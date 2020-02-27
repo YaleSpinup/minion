@@ -103,7 +103,7 @@ func (m *Job) UnmarshalJSON(j []byte) error {
 					msg := fmt.Sprintf("failed to parse modified_at as time: %+v", t)
 					return errors.New(msg)
 				}
-				t = t.Truncate(time.Second)
+				t = t.UTC().Truncate(time.Second)
 				m.ModifiedAt = &t
 			}
 		}
@@ -158,7 +158,7 @@ func (m *Job) UnmarshalJSON(j []byte) error {
 func (m Job) MarshalJSON() ([]byte, error) {
 	modifiedAt := ""
 	if m.ModifiedAt != nil {
-		modifiedAt = m.ModifiedAt.Truncate(time.Second).Format(time.RFC3339)
+		modifiedAt = m.ModifiedAt.UTC().Truncate(time.Second).Format(time.RFC3339)
 	}
 
 	job := struct {

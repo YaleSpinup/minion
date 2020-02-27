@@ -260,7 +260,7 @@ func (s *S3Repository) Update(ctx context.Context, account, id string, job *Job)
 	}
 
 	// set the modified at to right now
-	now := time.Now().Truncate(time.Second)
+	now := time.Now().UTC().Truncate(time.Second)
 	job.ModifiedAt = &now
 
 	log.Infof("updating job %+v", job)

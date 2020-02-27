@@ -19,7 +19,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var testTime = time.Now().Truncate(time.Second)
+var testTime = time.Now().UTC().Truncate(time.Second)
 
 // mockS3Client is a fake S3 client
 type mockS3Client struct {
@@ -429,6 +429,13 @@ func TestGet(t *testing.T) {
 		if err != nil {
 			t.Errorf("expected nil error, got %s", err)
 		}
+
+		if !expected.ModifiedAt.Equal(*out.ModifiedAt) {
+			t.Errorf("expected modified at to be %s, got %s", expected.ModifiedAt, out.ModifiedAt)
+		}
+		// time has a "magic" local timezone when using time.Now() vs Parse. times need
+		// to be compared with time.Equal https://github.com/golang/go/issues/17506
+		out.ModifiedAt = expected.ModifiedAt
 
 		if !reflect.DeepEqual(expected, out) {
 			t.Errorf("expected %+v, got %+v", expected, out)
