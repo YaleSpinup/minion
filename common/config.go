@@ -10,11 +10,29 @@ import (
 
 // Config is representation of the configuration data
 type Config struct {
-	ListenAddress string
-	Token         string
-	LogLevel      string
-	Version       Version
-	Org           string
+	Accounts       map[string]Account
+	JobsRepository JobsRepository
+	LockProvider   LockProvider
+	ListenAddress  string
+	Token          string
+	LogLevel       string
+	Version        Version
+	Org            string
+}
+
+// Account is the configuration for an individual account
+type Account struct{}
+
+type JobsRepository struct {
+	Type          string
+	RefreshPeriod string
+	Config        map[string]interface{}
+}
+
+type LockProvider struct {
+	Type   string
+	TTL    string
+	Config map[string]interface{}
 }
 
 // Version carries around the API version information

@@ -35,7 +35,7 @@ kubectl apply -f https://gist.githubusercontent.com/fishnix/a94dd54ec72523024f5a
 
 * update your `hosts` file to point spindev.internal.yale.yale.edu to localhost
 
-* use the endpoint `http://<<spindev.internal.yale.edu>>/v1/ds`
+* use the endpoint `http://<<spindev.internal.yale.edu>>/v1//minion`
 
 Saving your code should rebuild and redeploy your project automatically
 

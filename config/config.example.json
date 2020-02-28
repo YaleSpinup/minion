@@ -1,12 +1,28 @@
 { 
-  "listenAddress": ":8080",
   "accounts": {
-    "someaccount": {
+    "myaccount": {}
+  },
+  "jobsRepository": {
+    "type": "s3",
+    "refreshPeriod": "60m",
+    "config": {
       "region": "us-east-1",
-      "akid": "xxxxxxxxxxxxxxxxxxxxxxxx",
-      "secret": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+      "akid": "keykeykeykeykeykeykey",
+      "secret": "secretsecretsecretsecretsecret",
+      "bucket": "my-jobsrepository",
+      "prefix": "jobs"
     }
   },
+  "lockProvider": {
+    "type": "redis",
+    "ttl": "5m",
+    "config": {
+      "host": "127.0.0.1",
+      "port": 6379,
+      "database": 2
+    }
+  },
+  "listenAddress": ":8080",
   "token": "xxxxxx",
   "logLevel": "info",
   "org": "localdev"
