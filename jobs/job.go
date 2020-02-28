@@ -144,7 +144,7 @@ func (m *Job) UnmarshalJSON(j []byte) error {
 
 	if enabled, ok := rawStrings["enabled"]; ok {
 		if s, ok := enabled.(bool); !ok {
-			msg := fmt.Sprintf("enabled is not a string: %+v", rawStrings["enabled"])
+			msg := fmt.Sprintf("enabled is not a bool: %+v", rawStrings["enabled"])
 			return errors.New(msg)
 		} else {
 			m.Enabled = s

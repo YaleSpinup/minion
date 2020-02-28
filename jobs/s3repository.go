@@ -167,7 +167,7 @@ func (s *S3Repository) Create(ctx context.Context, account string, job *Job) (*J
 
 // Delete deletes a job in the s3 jobs repository
 func (s *S3Repository) Delete(ctx context.Context, account, id string) error {
-	if id == "" {
+	if id == "" || account == "" {
 		return apierror.New(apierror.ErrBadRequest, "invalid input", errors.New("empty input"))
 	}
 

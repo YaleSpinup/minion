@@ -310,6 +310,11 @@ func TestDelete(t *testing.T) {
 			id:      "some-id",
 			err:     nil,
 		},
+		deleteTest{
+			account: "",
+			id:      "some-id",
+			err:     errors.New("derp"),
+		},
 	}
 
 	for _, tst := range testJobs {

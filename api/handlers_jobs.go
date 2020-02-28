@@ -22,7 +22,7 @@ func (s *server) JobsCreateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Debugf("creating job for account %s", account)
+	log.Infof("creating job for account %s", account)
 
 	input := jobs.Job{}
 	err := json.NewDecoder(r.Body).Decode(&input)
@@ -62,7 +62,7 @@ func (s *server) JobsListHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Debugf("listing jobs for account %s from repository", account)
+	log.Infof("listing jobs for account %s from repository", account)
 
 	list, err := s.jobsRepository.List(r.Context(), account)
 	if err != nil {
@@ -94,7 +94,7 @@ func (s *server) JobsShowHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Debugf("showing job %s for account %s from repository", id, account)
+	log.Infof("showing job %s for account %s from repository", id, account)
 
 	job, err := s.jobsRepository.Get(r.Context(), account, id)
 	if err != nil {
@@ -126,7 +126,7 @@ func (s *server) JobsUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Debugf("updating job '%s' for account %s from repository", id, account)
+	log.Infof("updating job '%s' for account %s from repository", id, account)
 
 	input := jobs.Job{}
 	err := json.NewDecoder(r.Body).Decode(&input)
@@ -169,7 +169,7 @@ func (s *server) JobsDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Debugf("deleting job '%s' for account %s fromt repository", id, account)
+	log.Infof("deleting job '%s' for account %s fromt repository", id, account)
 
 	err := s.jobsRepository.Delete(r.Context(), account, id)
 	if err != nil {
