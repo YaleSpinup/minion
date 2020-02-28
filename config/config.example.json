@@ -1,6 +1,23 @@
 { 
   "accounts": {
-    "myaccount": {}
+    "myaccount": {
+      "runners": ["dummyRunner", "instanceRunner"]
+    }
+  },
+  "jobRunners": {
+    "dummyRunner": {
+      "type": "dummy",
+      "config": {
+        "template": "Hello, {{.Account}}!"
+      }
+    },
+    "instanceRunner": {
+      "type": "instance",
+      "config": {
+        "endpointTemplate": "http://127.0.0.1:8080/v1/ec2/{{.Account}}/instances/{{.InstanceID}}/power",
+        "token": "yyyyyyyy"
+      }
+    }
   },
   "jobsRepository": {
     "type": "s3",
@@ -9,7 +26,7 @@
       "region": "us-east-1",
       "akid": "keykeykeykeykeykeykey",
       "secret": "secretsecretsecretsecretsecret",
-      "bucket": "my-jobsrepository",
+      "bucket": "myjobsrepository",
       "prefix": "jobs"
     }
   },

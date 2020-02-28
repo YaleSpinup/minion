@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -22,6 +23,11 @@ type Job struct {
 	Name               string
 	Group              string
 	ScheduleExpression string
+}
+
+// Runner has a Run method and runs a job
+type Runner interface {
+	Run(ctx context.Context, account string, parameters interface{}) (string, error)
 }
 
 // NewID returns a new ID for a job.  Currently this is just a UUID string

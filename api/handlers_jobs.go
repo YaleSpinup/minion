@@ -52,6 +52,7 @@ func (s *server) JobsCreateHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(j)
 }
 
+// JobsListHandler lists the jobs in the repository for an account
 func (s *server) JobsListHandler(w http.ResponseWriter, r *http.Request) {
 	w = LogWriter{w}
 	vars := mux.Vars(r)
@@ -82,6 +83,7 @@ func (s *server) JobsListHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(j)
 }
 
+// JobsShowHandler gets the details about an individual job in the repository
 func (s *server) JobsShowHandler(w http.ResponseWriter, r *http.Request) {
 	w = LogWriter{w}
 	vars := mux.Vars(r)
@@ -114,6 +116,7 @@ func (s *server) JobsShowHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(j)
 }
 
+// JobsUpdateHandler updates the details of a job
 func (s *server) JobsUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	w = LogWriter{w}
 	vars := mux.Vars(r)
@@ -157,6 +160,7 @@ func (s *server) JobsUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(j)
 }
 
+// JobsDeleteHandler removes a job from the respository
 func (s *server) JobsDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	w = LogWriter{w}
 	vars := mux.Vars(r)
@@ -180,4 +184,69 @@ func (s *server) JobsDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
 	w.Write([]byte("OK"))
+}
+
+// JobsRunHandler runs a job explicitely.  This will probably be used mainly for testing and may go away.
+func (s *server) JobsRunHandler(w http.ResponseWriter, r *http.Request) {
+	w = LogWriter{w}
+	vars := mux.Vars(r)
+	acct := vars["account"]
+	id := vars["id"]
+
+	account, ok := s.accounts[acct]
+	if !ok {
+		msg := fmt.Sprintf("account not found: %s", acct)
+		handleError(w, apierror.New(apierror.ErrNotFound, msg, nil))
+		return
+	}
+
+	log.Debugf("running job '%s' for account %s", id, acct)
+
+	// get the job details from the jobs repostory
+	job, err := s.jobsRepository.Get(r.Context(), acct, id)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	// if the job from the repository has a runner configured
+	if runner, ok := job.Details["runner"]; ok {
+		log.Debugf("found requested runner '%s' in job details", runner)
+
+		// look for that runner in the list of available runners
+		if jobRunner, ok := s.jobRunners[runner]; ok {
+			log.Debugf("jobRunner is defined for requested runner '%s': %+v", runner, jobRunner)
+
+			// check if the runner is configured for the account
+			allowed := false
+			for _, r := range account.Runners {
+				if r == runner {
+					allowed = true
+					break
+				}
+			}
+
+			if !allowed {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("runner not found for account"))
+			}
+
+			// run the configured runner
+			out, err := jobRunner.Run(r.Context(), acct, job.Details)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("failed running job " + err.Error()))
+			}
+
+			w.WriteHeader(http.StatusAccepted)
+			w.Write([]byte(out))
+			return
+		}
+		log.Warnf("jobRunner is not defined for requested runner '%s'", runner)
+	}
+
+	w.WriteHeader(http.StatusBadRequest)
+	w.Write([]byte("runner not found in job"))
 }

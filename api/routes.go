@@ -17,4 +17,7 @@ func (s *server) routes() {
 	api.HandleFunc("/{account}/jobs/{id}", s.JobsShowHandler).Methods(http.MethodGet)
 	api.HandleFunc("/{account}/jobs/{id}", s.JobsUpdateHandler).Methods(http.MethodPut)
 	api.HandleFunc("/{account}/jobs/{id}", s.JobsDeleteHandler).Methods(http.MethodDelete)
+
+	// TODO: remove this route one the jobs are running on a schedule
+	api.HandleFunc("/{account}/jobs/{id}", s.JobsRunHandler).Methods(http.MethodPatch)
 }
