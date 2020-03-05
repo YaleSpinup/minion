@@ -1,7 +1,6 @@
 package jobs
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,17 +24,10 @@ type Job struct {
 	ScheduleExpression string
 }
 
-// Runner has a Run method and runs a job
-type Runner interface {
-	Run(ctx context.Context, account string, parameters interface{}) (string, error)
-}
-
 // NewID returns a new ID for a job.  Currently this is just a UUID string
 func NewID() string {
 	id := uuid.New().String()
-
 	log.Debugf("generated random job id %s", id)
-
 	return id
 }
 
@@ -53,108 +45,113 @@ func (m *Job) UnmarshalJSON(j []byte) error {
 	log.Debug("unmarshaled metadata into rawstrings")
 
 	if desc, ok := rawStrings["description"]; ok {
-		if s, ok := desc.(string); !ok {
+		s, ok := desc.(string)
+		if !ok {
 			msg := fmt.Sprintf("description is not a string: %+v", rawStrings["description"])
 			return errors.New(msg)
-		} else {
-			m.Description = s
 		}
+		m.Description = s
 	}
 
 	if d, ok := rawStrings["details"]; ok {
 		details := make(map[string]string)
-		if i, ok := d.(map[string]interface{}); !ok {
+		i, ok := d.(map[string]interface{})
+		if !ok {
 			msg := fmt.Sprintf("details is not a map of strings: %+v", rawStrings["details"])
 			return errors.New(msg)
-		} else {
-			for k, v := range i {
-				if s, ok := v.(string); ok {
-					details[k] = s
-				} else {
-					msg := fmt.Sprintf("invalid type in details map, value of '%s' is not a string %T(%v)'", k, v, v)
-					return errors.New(msg)
-				}
+		}
+
+		for k, v := range i {
+			s, ok := v.(string)
+			if !ok {
+				msg := fmt.Sprintf("invalid type in details map, value of '%s' is not a string %T(%v)'", k, v, v)
+				return errors.New(msg)
 			}
+			details[k] = s
 		}
 
 		m.Details = details
 	}
 
 	if group, ok := rawStrings["group"]; ok {
-		if s, ok := group.(string); !ok {
+		s, ok := group.(string)
+		if !ok {
 			msg := fmt.Sprintf("group is not a string: %+v", rawStrings["group"])
 			return errors.New(msg)
-		} else {
-			m.Group = s
 		}
+		m.Group = s
 	}
 
 	if id, ok := rawStrings["id"]; ok {
-		if s, ok := id.(string); !ok {
+		s, ok := id.(string)
+		if !ok {
 			msg := fmt.Sprintf("id is not a string: %+v", rawStrings["id"])
 			return errors.New(msg)
-		} else {
-			m.ID = s
 		}
+		m.ID = s
 	}
 
 	if modifiedAt, ok := rawStrings["modified_at"]; ok {
-		if ma, ok := modifiedAt.(string); !ok {
+		ma, ok := modifiedAt.(string)
+		if !ok {
 			msg := fmt.Sprintf("modified_at is not a string: %+v", rawStrings["modified_at"])
 			return errors.New(msg)
-		} else {
-			if ma != "" {
-				t, err := time.Parse(time.RFC3339, ma)
-				if err != nil {
-					msg := fmt.Sprintf("failed to parse modified_at as time: %+v", t)
-					return errors.New(msg)
-				}
-				t = t.UTC().Truncate(time.Second)
-				m.ModifiedAt = &t
+		}
+
+		if ma != "" {
+			t, err := time.Parse(time.RFC3339, ma)
+			if err != nil {
+				msg := fmt.Sprintf("failed to parse modified_at as time: %+v", t)
+				return errors.New(msg)
 			}
+
+			t = t.UTC().Truncate(time.Second)
+			m.ModifiedAt = &t
 		}
 	}
 
 	if modifiedBy, ok := rawStrings["modified_by"]; ok {
-		if s, ok := modifiedBy.(string); !ok {
+		s, ok := modifiedBy.(string)
+		if !ok {
 			msg := fmt.Sprintf("modified_by is not a string: %+v", rawStrings["modified_by"])
 			return errors.New(msg)
-		} else {
-			m.ModifiedBy = s
 		}
+		m.ModifiedBy = s
 	}
 
 	if name, ok := rawStrings["name"]; ok {
-		if s, ok := name.(string); !ok {
+		s, ok := name.(string)
+		if !ok {
 			msg := fmt.Sprintf("name is not a string: %+v", rawStrings["name"])
 			return errors.New(msg)
-		} else {
-			m.Name = s
 		}
+		m.Name = s
 	}
 
 	if scheduleExpression, ok := rawStrings["schedule_expression"]; ok {
-		if s, ok := scheduleExpression.(string); !ok {
+		s, ok := scheduleExpression.(string)
+		if !ok {
 			msg := fmt.Sprintf("schedule_expression is not a string: %+v", rawStrings["schedule_expression"])
 			return errors.New(msg)
-		} else {
-			parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
-			_, err := parser.Parse(s)
-			if err != nil {
-				msg := fmt.Sprintf("schedule_expression is not a valid cron expression: '%s': %s", s, err)
-				return errors.New(msg)
-			}
-			m.ScheduleExpression = s
 		}
+
+		parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
+		_, err := parser.Parse(s)
+		if err != nil {
+			msg := fmt.Sprintf("schedule_expression is not a valid cron expression: '%s': %s", s, err)
+			return errors.New(msg)
+		}
+
+		m.ScheduleExpression = s
 	}
 
 	if enabled, ok := rawStrings["enabled"]; ok {
-		if s, ok := enabled.(bool); !ok {
+		s, ok := enabled.(bool)
+		if !ok {
 			msg := fmt.Sprintf("enabled is not a bool: %+v", rawStrings["enabled"])
 			return errors.New(msg)
-		} else {
-			m.Enabled = s
 		}
+		m.Enabled = s
 	}
 
 	return nil

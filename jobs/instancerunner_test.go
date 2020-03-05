@@ -112,29 +112,79 @@ func TestInstanceRunnerRun(t *testing.T) {
 	}
 
 	if _, err = instanceRunner.Run(context.TODO(), "", "foo"); err == nil {
-		t.Error("expected error for empty account, got nil")
+		t.Error("expected 'account is required' error for empty account, got nil")
+	} else if err.Error() != "account is required" {
+		t.Error("expected 'account is required' error for empty account, got nil")
 	}
 
-	if _, err = instanceRunner.Run(context.TODO(), "", map[string]string{}); err == nil {
+	if _, err = instanceRunner.Run(context.TODO(), "myaccount", map[string]string{}); err != nil {
+		e := RunnerError{}
+		if errors.As(err, &e) {
+			if e.Code != ErrMissingDetails {
+				t.Errorf("expected ErrMissingDetails with message 'missing instance_id', got %+v", e)
+			}
+
+			if e.Message != "missing instance_id" {
+				t.Errorf("expected ErrMissingDetails with message 'missing instance_id', got %+v", e)
+			}
+		} else {
+			t.Error("expected error for missing instance_id to be RunnerError")
+		}
+	} else {
 		t.Error("expected error for missing instance_id, got nil")
 	}
 
-	if _, err = instanceRunner.Run(context.TODO(), "", map[string]interface{}{
-		"instance_id": []string{"foo", "bar"},
-	}); err == nil {
+	if _, err = instanceRunner.Run(context.TODO(), "myaccount", map[string][]string{"instance_id": []string{"foo", "bar"}}); err != nil {
+		e := RunnerError{}
+		if errors.As(err, &e) {
+			if e.Code != ErrMissingDetails {
+				t.Errorf("expected ErrMissingDetails with message 'wrong type', got %+v", e)
+			}
+
+			if e.Message != "wrong type" {
+				t.Errorf("expected ErrMissingDetails with message 'wrong type', got %+v", e)
+			}
+		} else {
+			t.Error("expected error for missing instance_id to be RunnerError")
+		}
+	} else {
 		t.Error("expected error for wrong instance_id type, got nil")
 	}
 
-	if _, err = instanceRunner.Run(context.TODO(), "", map[string]interface{}{
-		"instance_id": "i-123456",
-	}); err == nil {
+	if _, err = instanceRunner.Run(context.TODO(), "myaccount", map[string]string{"instance_id": "i-123456"}); err != nil {
+		e := RunnerError{}
+		if errors.As(err, &e) {
+			if e.Code != ErrMissingDetails {
+				t.Errorf("expected ErrMissingDetails with message 'missing instance_action', got %+v", e)
+			}
+
+			if e.Message != "missing instance_action" {
+				t.Errorf("expected ErrMissingDetails with message 'missing instance_action', got %+v", e)
+			}
+		} else {
+			t.Error("expected error for missing instance_action to be RunnerError")
+		}
+	} else {
 		t.Error("expected error for missing instance_action, got nil")
 	}
 
-	if _, err = instanceRunner.Run(context.TODO(), "", map[string]interface{}{
+	if _, err = instanceRunner.Run(context.TODO(), "myaccount", map[string]interface{}{
 		"instance_id":     "i-123456",
 		"instance_action": []string{"reboot", "stop", "start"},
-	}); err == nil {
+	}); err != nil {
+		e := RunnerError{}
+		if errors.As(err, &e) {
+			if e.Code != ErrMissingDetails {
+				t.Errorf("expected ErrMissingDetails with message 'wrong type', got %+v", e)
+			}
+
+			if e.Message != "wrong type" {
+				t.Errorf("expected ErrMissingDetails with message 'wrong type', got %+v", e)
+			}
+		} else {
+			t.Error("expected error for wrong instance_action type to be RunnerError")
+		}
+	} else {
 		t.Error("expected error for wrong instance_action type, got nil")
 	}
 
@@ -172,7 +222,7 @@ func TestInstanceRunnerRun(t *testing.T) {
 	}
 
 	if out != "KO" {
-		t.Errorf("expected OK, got %s", out)
+		t.Errorf("expected KO, got %s", out)
 	}
 
 	instanceRunnerBadURL, err := NewInstanceRunner(map[string]interface{}{
@@ -187,66 +237,4 @@ func TestInstanceRunnerRun(t *testing.T) {
 	if err == nil {
 		t.Error("expected error for bad URI, got nil")
 	}
-}
-
-func TestStringMapParameters(t *testing.T) {
-	type test struct {
-		key       string
-		parameter interface{}
-		out       string
-		err       error
-	}
-
-	tests := []test{
-		test{
-			key:       "foo",
-			parameter: map[string]string{"foo": "bar"},
-			out:       "bar",
-			err:       nil,
-		},
-		test{
-			key:       "foo",
-			parameter: map[string]string{"foo": "bar,baz,biz,boz"},
-			out:       "bar,baz,biz,boz",
-			err:       nil,
-		},
-		test{
-			key:       "foo",
-			parameter: map[string]string{"fuz": "biz"},
-			out:       "",
-			err:       errors.New("foo"),
-		},
-		test{
-			key:       "foo",
-			parameter: map[string]interface{}{"foo": true},
-			out:       "",
-			err:       errors.New("foo"),
-		},
-		test{
-			key:       "foo",
-			parameter: map[string]interface{}{"foo": []string{"bar", "biz"}},
-			out:       "",
-			err:       errors.New("foo"),
-		},
-		test{
-			key:       "foo",
-			parameter: nil,
-			out:       "",
-			err:       errors.New("foo"),
-		},
-	}
-
-	for _, tst := range tests {
-		out, err := stringMapParameter(tst.key, tst.parameter)
-		if err != nil && tst.err == nil {
-			t.Errorf("expected nil error, got %s", err)
-		} else if tst.err != nil && err == nil {
-			t.Error("expected error, got nil")
-		}
-
-		if out != tst.out {
-			t.Errorf("expected output %s, got %s", tst.out, out)
-		}
-	}
-
 }

@@ -24,7 +24,7 @@ type InstanceRunner struct {
 // the endpoint and endpoint template are not currently validated but this can/should be done in the future.  If a
 // a token is passed, it will be configured but is not required.
 func NewInstanceRunner(config map[string]interface{}) (*InstanceRunner, error) {
-	log.Debug("creating new dummy job runner")
+	log.Debug("creating new instance job runner")
 
 	var endpoint string
 	if v, ok := config["endpoint"].(string); ok {
@@ -65,14 +65,19 @@ func (r *InstanceRunner) Run(ctx context.Context, account string, parameters int
 
 	log.Infof("running instance runner %+v in account %s,  with parameters %+v", r, account, parameters)
 
-	instanceID, err := stringMapParameter("instance_id", parameters)
-	if err != nil {
-		return "", err
+	params, ok := parameters.(map[string]string)
+	if !ok {
+		return "", NewRunnerError(ErrMissingDetails, "wrong type", errors.New("parameters list is not a map[string]string"))
 	}
 
-	action, err := stringMapParameter("instance_action", parameters)
-	if err != nil {
-		return "", err
+	instanceID, ok := params["instance_id"]
+	if !ok {
+		return "", NewRunnerError(ErrMissingDetails, "missing instance_id", nil)
+	}
+
+	action, ok := params["instance_action"]
+	if !ok {
+		return "", NewRunnerError(ErrMissingDetails, "missing instance_action", nil)
 	}
 
 	endpoint := r.Endpoint
@@ -86,17 +91,16 @@ func (r *InstanceRunner) Run(ctx context.Context, account string, parameters int
 
 		tmpl, err := template.New("endpoint").Parse(r.EndpointTemplate)
 		if err != nil {
-			return "", err
+			return "", NewRunnerError(ErrPreExecFailure, "template parsing failed", err)
 		}
 
 		var out bytes.Buffer
 		if err := tmpl.Execute(&out, &input); err != nil {
-			return "", err
+			return "", NewRunnerError(ErrPreExecFailure, "template execution failed", err)
 		}
 
 		endpoint = out.String()
 		log.Debugf("parsed endpoint template: %s", endpoint)
-
 	}
 
 	switch action {
@@ -111,7 +115,7 @@ func (r *InstanceRunner) Run(ctx context.Context, account string, parameters int
 		}
 		req, err := http.NewRequestWithContext(ctx, http.MethodPut, endpoint, bytes.NewReader(j))
 		if err != nil {
-			return "", err
+			return "", NewRunnerError(ErrPreExecFailure, "building http request failed", err)
 		}
 
 		if r.Token != "" {
@@ -120,37 +124,23 @@ func (r *InstanceRunner) Run(ctx context.Context, account string, parameters int
 
 		res, err := client.Do(req)
 		if err != nil {
-			return "", err
+			return "", NewRunnerError(ErrExecFailure, "http request failed", err)
 		}
-
 		defer res.Body.Close()
+
 		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {
-			return "", err
+			return "", NewRunnerError(ErrPostExecFailure, "reading response body failed", err)
 		}
 
 		log.Debugf("got response %s(%d) for endpoint %s: %s", res.Status, res.StatusCode, endpoint, body)
 
 		if res.StatusCode >= 300 {
-			return "", errors.New("unexpected response from instanceRunner api: " + res.Status)
+			return "", NewRunnerError(ErrExecFailure, "unexpected http respons", errors.New("unexpected response from instanceRunner api: "+res.Status))
 		}
 
 		return string(body), nil
 	default:
 		return "", fmt.Errorf("unexpected action '%s' for instance %s", action, instanceID)
-	}
-}
-
-// stringMapParameter is the most common case for parameters - string value of a map[string]string
-func stringMapParameter(key string, parameters interface{}) (string, error) {
-	log.Debugf("trying to get parameter value for key %s from parameters '%+v'", key, parameters)
-	if p, ok := parameters.(map[string]string); !ok {
-		return "", errors.New("parameter list is not a map[string]string")
-	} else {
-		if i, ok := p[key]; !ok {
-			return "", errors.New("key " + key + " was not found in the map[string]interface{} parameter")
-		} else {
-			return i, nil
-		}
 	}
 }

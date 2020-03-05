@@ -44,12 +44,12 @@ func (r *DummyRunner) Run(ctx context.Context, account string, parameters interf
 
 	tmpl, err := template.New("dummy").Parse(r.Template)
 	if err != nil {
-		return "", err
+		return "", NewRunnerError(ErrPreExecFailure, "template parsing failed", err)
 	}
 
 	var out bytes.Buffer
 	if err := tmpl.Execute(&out, &input); err != nil {
-		return "", err
+		return "", NewRunnerError(ErrPreExecFailure, "template parsing failed", err)
 	}
 
 	msg := out.String()

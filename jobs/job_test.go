@@ -68,8 +68,8 @@ func TestJobUnmarshalJSON(t *testing.T) {
 		t.Error("expected error for bad details, got nil")
 	}
 
-	// details empty
-	if err := out.UnmarshalJSON([]byte(`"details": {"foo": false}`)); err == nil {
+	// details value of wrong type
+	if err := out.UnmarshalJSON([]byte(`{"details":{"foo": false}}`)); err == nil {
 		t.Error("expected error for bad details, got nil")
 	}
 
@@ -101,6 +101,11 @@ func TestJobUnmarshalJSON(t *testing.T) {
 	// name type
 	if err := out.UnmarshalJSON([]byte(`{"name":false}`)); err == nil {
 		t.Error("expected error for bad name, got nil")
+	}
+
+	// schedule_expression invalid
+	if err := out.UnmarshalJSON([]byte(`{"schedule_expression":""}`)); err == nil {
+		t.Error("expected error for bad schedule_expression, got nil")
 	}
 
 	// schedule_expression type
