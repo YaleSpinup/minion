@@ -15,7 +15,7 @@ var testConfig = []byte(
 		},
 		"jobsRepository": {
 			"type": "s3",
-			"refreshPeriod": "60m",
+			"RefreshInterval": "60m",
 			"config": {
 				"region": "us-east-1",
 				"akid": "keykeykeykeykeykeykey",
@@ -64,8 +64,8 @@ func TestReadConfig(t *testing.T) {
 			},
 		},
 		JobsRepository: JobsRepository{
-			Type:          "s3",
-			RefreshPeriod: "60m",
+			Type:            "s3",
+			RefreshInterval: "60m",
 			Config: map[string]interface{}{
 				"akid":   "keykeykeykeykeykeykey",
 				"secret": "secretsecretsecretsecretsecret",

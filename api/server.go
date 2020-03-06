@@ -6,10 +6,12 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/YaleSpinup/minion/common"
 	"github.com/YaleSpinup/minion/jobs"
+	"github.com/google/uuid"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
@@ -20,18 +22,47 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-type jobRunner struct{}
-
-type refreshRunner struct {
+var publicURLs = map[string]string{
+	"/v1/minion/ping":    "public",
+	"/v1/minion/version": "public",
+	"/v1/minion/metrics": "public",
 }
 
+// jobsCache is a map and a mux
+type jobsCache struct {
+	Cache map[string]*jobs.Job
+	Mux   sync.Mutex
+}
+
+// server is responsible for all things api.  it caries the configuration
+// and dependencies that are necessary in the http handlers.
 type server struct {
 	accounts       map[string]common.Account
-	context        context.Context
+	jobQueue       *jobs.Queue
 	jobsRepository jobs.Repository
 	jobRunners     map[string]jobs.Runner
 	router         *mux.Router
 	version        common.Version
+}
+
+// loader is responisble for loading the jobs from durable storage into a local cache.
+type loader struct {
+	accounts       map[string]common.Account
+	id             string
+	jobsCache      *jobsCache
+	jobsRepository jobs.Repository
+}
+
+// scheduler searches through the locally cached jobs and adds them to the queue
+type scheduler struct{}
+
+// executer pulls jobs off of the queue and runs then
+type executer struct {
+	accounts   map[string]common.Account
+	id         string
+	jobsCache  *jobsCache
+	jobQueue   *jobs.Queue
+	jobRunners map[string]jobs.Runner
 }
 
 // Org will carry throughout the api and get tagged on resources
@@ -39,6 +70,14 @@ var Org string
 
 // NewServer creates a new server and starts it
 func NewServer(config common.Config) error {
+	id := uuid.New().String()
+	log.Infof("starting api server with id '%s'", id)
+
+	// TODO: replace this with something else, this is no good
+	jobsCache := &jobsCache{
+		Cache: make(map[string]*jobs.Job),
+	}
+
 	// setup server context with cancellation
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -48,7 +87,19 @@ func NewServer(config common.Config) error {
 		jobRunners: make(map[string]jobs.Runner),
 		router:     mux.NewRouter(),
 		version:    config.Version,
-		context:    ctx,
+	}
+
+	l := loader{
+		accounts:  make(map[string]common.Account),
+		id:        id,
+		jobsCache: jobsCache,
+	}
+
+	e := executer{
+		accounts:   make(map[string]common.Account),
+		id:         id,
+		jobRunners: make(map[string]jobs.Runner),
+		jobsCache:  jobsCache,
 	}
 
 	if config.Org == "" {
@@ -59,7 +110,20 @@ func NewServer(config common.Config) error {
 	for name, c := range config.Accounts {
 		log.Debugf("configuring account %s with %+v", name, c)
 		s.accounts[name] = c
+		l.accounts[name] = c
+		e.accounts[name] = c
 	}
+
+	// setup job queue
+	jobQueueName := "minion-" + Org + "-queue"
+	jobQueue, err := jobs.NewQueue(jobQueueName, "localhost:6379", "", 0, 10)
+	if err != nil {
+		return err
+	}
+	defer jobQueue.Close()
+
+	s.jobQueue = jobQueue
+	e.jobQueue = jobQueue
 
 	for name, c := range config.JobRunners {
 		log.Debugf("configuring job runner %s with %+v", name, c)
@@ -71,6 +135,7 @@ func NewServer(config common.Config) error {
 				return err
 			}
 			s.jobRunners[name] = r
+			e.jobRunners[name] = r
 
 			log.Infof("configured new dummy runner %s", name)
 		case "instance":
@@ -79,6 +144,7 @@ func NewServer(config common.Config) error {
 				return err
 			}
 			s.jobRunners[name] = r
+			e.jobRunners[name] = r
 
 			log.Infof("configured new instance runner %s", name)
 		default:
@@ -86,6 +152,7 @@ func NewServer(config common.Config) error {
 		}
 	}
 
+	// the jobs repository is the durable storage for jobs
 	repo := config.JobsRepository
 	log.Debugf("Creating new JobsRepository of type %s with configuration %+v (org: %s)", repo.Type, repo.Config, Org)
 
@@ -97,18 +164,31 @@ func NewServer(config common.Config) error {
 		}
 		jr.Prefix = jr.Prefix + "/" + Org
 		s.jobsRepository = jr
+		l.jobsRepository = jr
 	default:
 		return errors.New("failed to determine jobs repository type, or type not supported: " + repo.Type)
 	}
 
-	// start job refresher
-	// err := refreshJobs()
-
-	publicURLs := map[string]string{
-		"/v1/minion/ping":    "public",
-		"/v1/minion/version": "public",
-		"/v1/minion/metrics": "public",
+	jobRefreshInterval, err := time.ParseDuration(config.JobsRepository.RefreshInterval)
+	if err != nil {
+		return err
 	}
+
+	// load jobs from durable storage into aa local cache
+	err = l.start(ctx, jobRefreshInterval)
+	if err != nil {
+		return err
+	}
+
+	// pop and execute jobs from the queue
+	e.start(ctx, time.Second)
+
+	// TODO build up and start the scheduler that..
+	// * runs every (?) minute and find all jobs and add them to the queue
+	// * locks the loading of jobs or individual jobs
+
+	// TODO build up and start requeuer that
+	// * checks the backup queue for jobs older than XX minutes and requeues them (assuming the runner died)
 
 	// load routes
 	s.routes()
@@ -116,6 +196,7 @@ func NewServer(config common.Config) error {
 	if config.ListenAddress == "" {
 		config.ListenAddress = ":8080"
 	}
+
 	handler := handlers.RecoveryHandler()(handlers.LoggingHandler(os.Stdout, TokenMiddleware(config.Token, publicURLs, s.router)))
 	srv := &http.Server{
 		Handler:      handler,

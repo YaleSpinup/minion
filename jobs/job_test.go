@@ -130,11 +130,12 @@ func TestMetadataMarshalJSON(t *testing.T) {
 	tests := []test{
 		test{
 			Job{},
-			[]byte(`{"description":"","details":null,"group":"","id":"","modified_at":"","modified_by":"","name":"","schedule_expression":"","enabled":false}`),
+			[]byte(`{"account":"","description":"","details":null,"group":"","id":"","modified_at":"","modified_by":"","name":"","schedule_expression":"","enabled":false}`),
 			nil,
 		},
 		test{
 			Job{
+				Account:     "foocct",
 				Description: "Alien sightings",
 				Details: map[string]string{
 					"instance_id": "i-derpderpderp",
@@ -147,7 +148,7 @@ func TestMetadataMarshalJSON(t *testing.T) {
 				ScheduleExpression: "cron()",
 				Enabled:            true,
 			},
-			[]byte(`{"description":"Alien sightings","details":{"instance_id":"i-derpderpderp"},"group":"folder1","id":"08d754ba-8540-4fdc-92f3-47950c1cdb1c","modified_at":"2015-11-21T04:19:01Z","modified_by":"kkroker","name":"alien-sightings-dataset","schedule_expression":"cron()","enabled":true}`),
+			[]byte(`{"account":"foocct","description":"Alien sightings","details":{"instance_id":"i-derpderpderp"},"group":"folder1","id":"08d754ba-8540-4fdc-92f3-47950c1cdb1c","modified_at":"2015-11-21T04:19:01Z","modified_by":"kkroker","name":"alien-sightings-dataset","schedule_expression":"cron()","enabled":true}`),
 			nil,
 		},
 	}

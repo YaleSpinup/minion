@@ -31,6 +31,7 @@ func (s *server) JobsCreateHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, apierror.New(apierror.ErrBadRequest, msg, err))
 		return
 	}
+	input.Account = account
 
 	log.Debugf("decoded request body into job input %+v", input)
 
@@ -139,6 +140,7 @@ func (s *server) JobsUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	input.ID = id
+	input.Account = account
 
 	log.Debugf("decoded request body into job input %+v", input)
 
@@ -200,7 +202,7 @@ func (s *server) JobsRunHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Debugf("running job '%s' for account %s", id, acct)
+	log.Debugf("queuing job '%s' for account %s", id, acct)
 
 	// get the job details from the jobs repostory
 	job, err := s.jobsRepository.Get(r.Context(), acct, id)
@@ -233,15 +235,14 @@ func (s *server) JobsRunHandler(w http.ResponseWriter, r *http.Request) {
 				w.Write([]byte("runner not found for account"))
 			}
 
-			// run the configured runner
-			out, err := jobRunner.Run(r.Context(), acct, job.Details)
-			if err != nil {
+			if err := s.jobQueue.Enqueue(&jobs.QueuedJob{ID: id}); err != nil {
 				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte("failed running job " + err.Error()))
+				w.Write([]byte("failed queuing job " + err.Error()))
+				return
 			}
 
 			w.WriteHeader(http.StatusAccepted)
-			w.Write([]byte(out))
+			w.Write([]byte("OK"))
 			return
 		}
 		log.Warnf("jobRunner is not defined for requested runner '%s'", runner)
