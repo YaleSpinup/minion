@@ -12,8 +12,9 @@ import (
 type Config struct {
 	Accounts       map[string]Account
 	JobsRepository JobsRepository
-	LockProvider   LockProvider
+	JobRunners     map[string]JobRunner
 	ListenAddress  string
+	LockProvider   LockProvider
 	Token          string
 	LogLevel       string
 	Version        Version
@@ -21,7 +22,14 @@ type Config struct {
 }
 
 // Account is the configuration for an individual account
-type Account struct{}
+type Account struct {
+	Runners []string
+}
+
+type JobRunner struct {
+	Type   string
+	Config map[string]interface{}
+}
 
 type JobsRepository struct {
 	Type          string

@@ -277,9 +277,10 @@ func (s *S3Repository) Update(ctx context.Context, account, id string, job *Job)
 	}
 
 	out, err := s.S3.PutObjectWithContext(ctx, &s3.PutObjectInput{
-		Bucket: aws.String(s.Bucket),
-		Key:    aws.String(key),
-		Body:   bytes.NewReader(j),
+		Body:        bytes.NewReader(j),
+		Bucket:      aws.String(s.Bucket),
+		ContentType: aws.String("application/json"),
+		Key:         aws.String(key),
 	})
 	if err != nil {
 		return nil, ErrCode("failed to put s3 object", err)

@@ -26,9 +26,10 @@ type refreshRunner struct {
 }
 
 type server struct {
-	accounts       map[string]struct{}
+	accounts       map[string]common.Account
 	context        context.Context
 	jobsRepository jobs.Repository
+	jobRunners     map[string]jobs.Runner
 	router         *mux.Router
 	version        common.Version
 }
@@ -43,10 +44,11 @@ func NewServer(config common.Config) error {
 	defer cancel()
 
 	s := server{
-		accounts: make(map[string]struct{}),
-		router:   mux.NewRouter(),
-		version:  config.Version,
-		context:  ctx,
+		accounts:   make(map[string]common.Account),
+		jobRunners: make(map[string]jobs.Runner),
+		router:     mux.NewRouter(),
+		version:    config.Version,
+		context:    ctx,
 	}
 
 	if config.Org == "" {
@@ -57,6 +59,31 @@ func NewServer(config common.Config) error {
 	for name, c := range config.Accounts {
 		log.Debugf("configuring account %s with %+v", name, c)
 		s.accounts[name] = c
+	}
+
+	for name, c := range config.JobRunners {
+		log.Debugf("configuring job runner %s with %+v", name, c)
+
+		switch c.Type {
+		case "dummy":
+			r, err := jobs.NewDummyRunner(c.Config)
+			if err != nil {
+				return err
+			}
+			s.jobRunners[name] = r
+
+			log.Infof("configured new dummy runner %s", name)
+		case "instance":
+			r, err := jobs.NewInstanceRunner(c.Config)
+			if err != nil {
+				return err
+			}
+			s.jobRunners[name] = r
+
+			log.Infof("configured new instance runner %s", name)
+		default:
+			return errors.New("failed to determine jobs runner type, or type not supported: " + c.Type)
+		}
 	}
 
 	repo := config.JobsRepository
