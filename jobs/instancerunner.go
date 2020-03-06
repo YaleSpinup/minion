@@ -136,7 +136,7 @@ func (r *InstanceRunner) Run(ctx context.Context, account string, parameters int
 		log.Debugf("got response %s(%d) for endpoint %s: %s", res.Status, res.StatusCode, endpoint, body)
 
 		if res.StatusCode >= 300 {
-			return "", NewRunnerError(ErrExecFailure, "unexpected http respons", errors.New("unexpected response from instanceRunner api: "+res.Status))
+			return "", NewRunnerError(ErrExecFailure, "unexpected http response", errors.New("unexpected response from instanceRunner api: "+res.Status))
 		}
 
 		return string(body), nil
