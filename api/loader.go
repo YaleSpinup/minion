@@ -7,22 +7,22 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (l *loader) start(ctx context.Context, interval time.Duration) error {
+func (l *loader) start(ctx context.Context) error {
 	log.Infof("%s: loader starting", l.id)
 
-	// run it the first time
+	// run the load for the first time which also blocks return until the cache is fresh
 	if err := l.run(ctx); err != nil {
 		return nil
 	}
 
-	go l.loop(ctx, interval)
+	go l.loop(ctx)
 
 	log.Infof("%s: loader started", l.id)
 	return nil
 }
 
-func (l *loader) loop(ctx context.Context, interval time.Duration) {
-	ticker := time.NewTicker(interval)
+func (l *loader) loop(ctx context.Context) {
+	ticker := time.NewTicker(l.refreshInterval)
 	for {
 		log.Debug("starting loader loop")
 
@@ -64,8 +64,6 @@ func (l *loader) run(ctx context.Context) error {
 			log.Debugf("got job details: %+v", job)
 			l.jobsCache.Cache[j] = job
 		}
-
-		time.Sleep(20 * time.Second)
 	}
 
 	log.Infof("%s done loading jobs", l.id)

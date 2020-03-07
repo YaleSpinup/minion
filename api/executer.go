@@ -23,7 +23,7 @@ func (e *executer) loop(ctx context.Context, interval time.Duration) {
 			q := jobs.QueuedJob{}
 			if err := e.jobQueue.Fetch(&q); err != nil {
 				qErr, ok := err.(jobs.QueueError)
-				if ok && qErr.Code == jobs.QueueIsEmpty {
+				if ok && qErr.Code == jobs.ErrQueueIsEmpty {
 					log.Debugf("%s: no jobs", e.id)
 				} else {
 					log.Errorf("%s: error fetching jobs from the queue: %s", e.id, err)

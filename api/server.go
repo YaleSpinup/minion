@@ -47,10 +47,11 @@ type server struct {
 
 // loader is responisble for loading the jobs from durable storage into a local cache.
 type loader struct {
-	accounts       map[string]common.Account
-	id             string
-	jobsCache      *jobsCache
-	jobsRepository jobs.Repository
+	accounts        map[string]common.Account
+	id              string
+	jobsCache       *jobsCache
+	jobsRepository  jobs.Repository
+	refreshInterval time.Duration
 }
 
 // scheduler searches through the locally cached jobs and adds them to the queue
@@ -114,68 +115,36 @@ func NewServer(config common.Config) error {
 		e.accounts[name] = c
 	}
 
-	// setup job queue
-	jobQueueName := "minion-" + Org + "-queue"
-	jobQueue, err := jobs.NewQueue(jobQueueName, "localhost:6379", "", 0, 10)
+	jobQueue, err := newJobQueue(Org)
 	if err != nil {
 		return err
 	}
 	defer jobQueue.Close()
-
 	s.jobQueue = jobQueue
 	e.jobQueue = jobQueue
 
-	for name, c := range config.JobRunners {
-		log.Debugf("configuring job runner %s with %+v", name, c)
-
-		switch c.Type {
-		case "dummy":
-			r, err := jobs.NewDummyRunner(c.Config)
-			if err != nil {
-				return err
-			}
-			s.jobRunners[name] = r
-			e.jobRunners[name] = r
-
-			log.Infof("configured new dummy runner %s", name)
-		case "instance":
-			r, err := jobs.NewInstanceRunner(c.Config)
-			if err != nil {
-				return err
-			}
-			s.jobRunners[name] = r
-			e.jobRunners[name] = r
-
-			log.Infof("configured new instance runner %s", name)
-		default:
-			return errors.New("failed to determine jobs runner type, or type not supported: " + c.Type)
-		}
-	}
-
-	// the jobs repository is the durable storage for jobs
-	repo := config.JobsRepository
-	log.Debugf("Creating new JobsRepository of type %s with configuration %+v (org: %s)", repo.Type, repo.Config, Org)
-
-	switch repo.Type {
-	case "s3":
-		jr, err := jobs.NewDefaultRepository(repo.Config)
-		if err != nil {
-			return err
-		}
-		jr.Prefix = jr.Prefix + "/" + Org
-		s.jobsRepository = jr
-		l.jobsRepository = jr
-	default:
-		return errors.New("failed to determine jobs repository type, or type not supported: " + repo.Type)
-	}
-
-	jobRefreshInterval, err := time.ParseDuration(config.JobsRepository.RefreshInterval)
+	jobRunners, err := newJobRunners(Org, config.JobRunners)
 	if err != nil {
 		return err
 	}
+	s.jobRunners = jobRunners
+	e.jobRunners = jobRunners
+
+	jobsRepository, err := newJobsRepository(Org, config.JobsRepository)
+	if err != nil {
+		return err
+	}
+	s.jobsRepository = jobsRepository
+	l.jobsRepository = jobsRepository
+
+	refreshInterval, err := time.ParseDuration(config.JobsRepository.RefreshInterval)
+	if err != nil {
+		return err
+	}
+	l.refreshInterval = refreshInterval
 
 	// load jobs from durable storage into aa local cache
-	err = l.start(ctx, jobRefreshInterval)
+	err = l.start(ctx)
 	if err != nil {
 		return err
 	}
@@ -267,4 +236,61 @@ func retry(attempts int, sleep time.Duration, f func() error) error {
 	}
 
 	return nil
+}
+
+func newJobQueue(org string) (*jobs.Queue, error) {
+	// setup job queue
+	queueName := "minion-" + org + "-queue"
+	queue, err := jobs.NewQueue(queueName, "localhost:6379", "", 0, 10)
+	if err != nil {
+		return nil, err
+	}
+	return queue, nil
+}
+
+func newJobsRepository(org string, repo common.JobsRepository) (jobs.Repository, error) {
+	// the jobs repository is the durable storage for jobs
+	log.Debugf("Creating new JobsRepository of type %s with configuration %+v (org: %s)", repo.Type, repo.Config, Org)
+
+	switch repo.Type {
+	case "s3":
+		jr, err := jobs.NewDefaultRepository(repo.Config)
+		if err != nil {
+			return nil, err
+		}
+		jr.Prefix = jr.Prefix + "/" + org
+		return jr, nil
+	}
+
+	return nil, errors.New("failed to determine jobs repository type, or type not supported: " + repo.Type)
+}
+
+func newJobRunners(org string, runners map[string]common.JobRunner) (map[string]jobs.Runner, error) {
+	jobRunners := make(map[string]jobs.Runner)
+	for name, c := range runners {
+		log.Debugf("configuring job runner %s with %+v", name, c)
+
+		switch c.Type {
+		case "dummy":
+			r, err := jobs.NewDummyRunner(c.Config)
+			if err != nil {
+				return nil, err
+			}
+			jobRunners[name] = r
+
+			log.Infof("configured new dummy runner %s", name)
+		case "instance":
+			r, err := jobs.NewInstanceRunner(c.Config)
+			if err != nil {
+				return nil, err
+			}
+			jobRunners[name] = r
+
+			log.Infof("configured new instance runner %s", name)
+		default:
+			return nil, errors.New("failed to determine jobs runner type, or type not supported: " + c.Type)
+		}
+	}
+
+	return jobRunners, nil
 }
