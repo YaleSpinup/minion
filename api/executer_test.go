@@ -2,6 +2,6 @@ package api
 
 import "testing"
 
-func TestLoaderRun(t *testing.T) {
+func TestExecuterRun(t *testing.T) {
 	t.Log("todo")
 }
