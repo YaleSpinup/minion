@@ -32,9 +32,9 @@ type JobRunner struct {
 }
 
 type JobsRepository struct {
-	Type          string
-	RefreshPeriod string
-	Config        map[string]interface{}
+	Type            string
+	RefreshInterval string
+	Config          map[string]interface{}
 }
 
 type LockProvider struct {

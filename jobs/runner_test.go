@@ -6,14 +6,14 @@ import (
 	"testing"
 )
 
-func TestNew(t *testing.T) {
+func TestNewRunnerError(t *testing.T) {
 	out := NewRunnerError(ErrExecFailure, "boom", errors.New("fail"))
 	if e := reflect.TypeOf(out).String(); e != "jobs.RunnerError" {
 		t.Errorf("expect type to be jobs.RunnerError, got %s", e)
 	}
 }
 
-func TestError(t *testing.T) {
+func TestRunnerError(t *testing.T) {
 	out := NewRunnerError(ErrExecFailure, "boom", errors.New("fail"))
 	if out.Error() != out.String() {
 		t.Errorf("expected '%s', got '%s'", out.String(), out)
@@ -25,7 +25,7 @@ func TestError(t *testing.T) {
 	}
 }
 
-func TestString(t *testing.T) {
+func TestRunnerErrorString(t *testing.T) {
 	out := NewRunnerError(ErrExecFailure, "boom", errors.New("fail"))
 	expect := "ExecutionFailure: boom (fail)"
 	if out.String() != expect {
@@ -39,7 +39,7 @@ func TestString(t *testing.T) {
 	}
 }
 
-func TestUnwrap(t *testing.T) {
+func TestRunnerErrorUnwrap(t *testing.T) {
 	err := errors.New("Fail")
 
 	out := NewRunnerError(ErrExecFailure, "boom", err)

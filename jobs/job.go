@@ -13,6 +13,7 @@ import (
 
 // Job is the detail about a job
 type Job struct {
+	Account            string
 	Description        string
 	Details            map[string]string
 	Enabled            bool
@@ -43,6 +44,15 @@ func (m *Job) UnmarshalJSON(j []byte) error {
 	}
 
 	log.Debug("unmarshaled metadata into rawstrings")
+
+	if acct, ok := rawStrings["account"]; ok {
+		if s, ok := acct.(string); !ok {
+			msg := fmt.Sprintf("account is not a string: %+v", rawStrings["account"])
+			return errors.New(msg)
+		} else {
+			m.Account = s
+		}
+	}
 
 	if desc, ok := rawStrings["description"]; ok {
 		s, ok := desc.(string)
@@ -165,6 +175,7 @@ func (m Job) MarshalJSON() ([]byte, error) {
 	}
 
 	job := struct {
+		Account            string            `json:"account"`
 		Description        string            `json:"description"`
 		Details            map[string]string `json:"details"`
 		Group              string            `json:"group"`
@@ -174,7 +185,15 @@ func (m Job) MarshalJSON() ([]byte, error) {
 		Name               string            `json:"name"`
 		ScheduleExpression string            `json:"schedule_expression"`
 		Enabled            bool              `json:"enabled"`
-	}{m.Description, m.Details, m.Group, m.ID, modifiedAt, m.ModifiedBy, m.Name, m.ScheduleExpression, m.Enabled}
+	}{m.Account, m.Description, m.Details, m.Group, m.ID, modifiedAt, m.ModifiedBy, m.Name, m.ScheduleExpression, m.Enabled}
 
 	return json.Marshal(job)
+}
+
+func (m *Job) MarshalBinary() ([]byte, error) {
+	return m.MarshalJSON()
+}
+
+func (m *Job) UnmarshalBinary(data []byte) error {
+	return m.UnmarshalJSON(data)
 }
