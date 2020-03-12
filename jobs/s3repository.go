@@ -211,6 +211,7 @@ func (s *S3Repository) Get(ctx context.Context, account, id string) (*Job, error
 	if err != nil {
 		return nil, ErrCode("failed to get job object from s3 "+id, err)
 	}
+	defer out.Body.Close()
 
 	job := &Job{}
 	err = json.NewDecoder(out.Body).Decode(job)

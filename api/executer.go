@@ -17,7 +17,7 @@ func (e *executer) start(ctx context.Context, interval time.Duration) {
 func (e *executer) loop(ctx context.Context, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	for {
-		log.Debugf("%s: starting executer loop", e.id)
+		log.Debugf("%s: starting executer loop (%s)", e.id, time.Now().String())
 		select {
 		case <-ticker.C:
 			q := jobs.QueuedJob{}

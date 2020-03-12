@@ -41,6 +41,7 @@ metadata:
     app: minion
     tier: api
 spec:
+  replicas: 3
   selector:
     matchLabels:
       app: minion

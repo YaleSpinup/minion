@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -38,7 +39,7 @@ type jobsCache struct {
 // and dependencies that are necessary in the http handlers.
 type server struct {
 	accounts       map[string]common.Account
-	jobQueue       *jobs.Queue
+	jobQueue       jobs.Queuer
 	jobsRepository jobs.Repository
 	jobRunners     map[string]jobs.Runner
 	router         *mux.Router
@@ -55,14 +56,19 @@ type loader struct {
 }
 
 // scheduler searches through the locally cached jobs and adds them to the queue
-type scheduler struct{}
+type scheduler struct {
+	id        string
+	jobsCache *jobsCache
+	locker    jobs.Locker
+	jobQueue  jobs.Queuer
+}
 
 // executer pulls jobs off of the queue and runs then
 type executer struct {
 	accounts   map[string]common.Account
 	id         string
 	jobsCache  *jobsCache
-	jobQueue   *jobs.Queue
+	jobQueue   jobs.Queuer
 	jobRunners map[string]jobs.Runner
 }
 
@@ -103,6 +109,11 @@ func NewServer(config common.Config) error {
 		jobsCache:  jobsCache,
 	}
 
+	d := scheduler{
+		id:        id,
+		jobsCache: jobsCache,
+	}
+
 	if config.Org == "" {
 		return errors.New("'org' cannot be empty in the configuration")
 	}
@@ -115,13 +126,14 @@ func NewServer(config common.Config) error {
 		e.accounts[name] = c
 	}
 
-	jobQueue, err := newJobQueue(Org)
+	jobQueue, err := newJobQueue(Org, config.QueueProvider)
 	if err != nil {
 		return err
 	}
 	defer jobQueue.Close()
 	s.jobQueue = jobQueue
 	e.jobQueue = jobQueue
+	d.jobQueue = jobQueue
 
 	jobRunners, err := newJobRunners(Org, config.JobRunners)
 	if err != nil {
@@ -143,7 +155,14 @@ func NewServer(config common.Config) error {
 	}
 	l.refreshInterval = refreshInterval
 
-	// load jobs from durable storage into a local cache
+	// configure the locking mechanism for the scheduler
+	locker, err := newLocker(Org, config.LockProvider)
+	if err != nil {
+		return err
+	}
+	d.locker = locker
+
+	// load jobs from durable storage into aa local cache
 	err = l.start(ctx)
 	if err != nil {
 		return err
@@ -152,9 +171,8 @@ func NewServer(config common.Config) error {
 	// pop and execute jobs from the queue
 	e.start(ctx, time.Second)
 
-	// TODO build up and start the scheduler that..
-	// * runs every (?) minute and find all jobs and add them to the queue
-	// * locks the loading of jobs or individual jobs
+	// start the job scheduler
+	d.start(ctx)
 
 	// TODO build up and start requeuer that
 	// * checks the backup queue for jobs older than XX minutes and requeues them (assuming the runner died)
@@ -238,10 +256,131 @@ func retry(attempts int, sleep time.Duration, f func() error) error {
 	return nil
 }
 
-func newJobQueue(org string) (*jobs.Queue, error) {
+func newLocker(org string, lp common.LockProvider) (jobs.Locker, error) {
+	log.Debugf("configuring locker with %+v", lp)
+
+	var host string
+	if hi, ok := lp.Config["host"]; !ok {
+		return nil, errors.New("redis host is required")
+	} else {
+		if h, ok := hi.(string); !ok {
+			return nil, errors.New("redis host is required and must be a string")
+		} else {
+			host = h
+		}
+	}
+
+	var port string
+	if pi, ok := lp.Config["port"]; !ok {
+		return nil, errors.New("redis port is required")
+	} else {
+		log.Debugf("port interface exists %+v", pi)
+
+		if p, ok := pi.(string); ok {
+			port = p
+		}
+
+		if p, ok := pi.(float64); ok {
+			port = strconv.Itoa(int(p))
+		}
+
+		if port == "" {
+			return nil, errors.New("redis port is required")
+		}
+	}
+
+	address := host + ":" + port
+
+	var password string
+	if pass, ok := lp.Config["password"]; ok {
+		if p, ok := pass.(string); ok {
+			password = p
+		}
+	}
+
+	var db int
+	if database, ok := lp.Config["database"]; ok {
+		if d, ok := database.(string); ok {
+			if i, err := strconv.ParseInt(d, 10, 64); err != nil {
+				log.Warnf("database '%s' is not parsable as an integer, ignoring", d)
+			} else {
+				db = int(i)
+			}
+		} else if d, ok := database.(float64); ok {
+			db = int(d)
+		} else {
+			log.Warnf("database '%v' is not a string or integer, ignoring", database)
+		}
+	}
+
+	lockerName := "minion-" + org + "-lock"
+	locker, err := jobs.NewRedisLocker(lockerName, address, password, db, "2m")
+	if err != nil {
+		return nil, err
+	}
+	return locker, nil
+}
+
+func newJobQueue(org string, qp common.QueueProvider) (jobs.Queuer, error) {
+	log.Debugf("configuring queue with %+v", qp)
+
+	var host string
+	if hi, ok := qp.Config["host"]; !ok {
+		return nil, errors.New("redis host is required")
+	} else {
+		if h, ok := hi.(string); !ok {
+			return nil, errors.New("redis host is required and must be a string")
+		} else {
+			host = h
+		}
+	}
+
+	var port string
+	if pi, ok := qp.Config["port"]; !ok {
+		return nil, errors.New("redis port is required")
+	} else {
+		log.Debugf("port interface exists %+v", pi)
+
+		if p, ok := pi.(string); ok {
+			port = p
+		}
+
+		if p, ok := pi.(float64); ok {
+			port = strconv.Itoa(int(p))
+		}
+
+		if port == "" {
+			return nil, errors.New("redis port is required")
+		}
+	}
+
+	address := host + ":" + port
+
+	var password string
+	if pass, ok := qp.Config["password"]; ok {
+		if p, ok := pass.(string); ok {
+			password = p
+		}
+	}
+
+	var db int
+	if database, ok := qp.Config["database"]; ok {
+		if d, ok := database.(string); ok {
+			if i, err := strconv.ParseInt(d, 10, 64); err != nil {
+				log.Warnf("database '%s' is not parsable as an integer, ignoring", d)
+			} else {
+				db = int(i)
+			}
+		} else if d, ok := database.(float64); ok {
+			db = int(d)
+		} else {
+			log.Warnf("database '%v' is not a string or integer, ignoring", database)
+		}
+	}
+
 	// setup job queue
 	queueName := "minion-" + org + "-queue"
-	queue, err := jobs.NewQueue(queueName, "localhost:6379", "", 0, 10)
+	queue, err := jobs.NewRedisQueuer(queueName, address, password, db, 10)
 	if err != nil {
 		return nil, err
 	}

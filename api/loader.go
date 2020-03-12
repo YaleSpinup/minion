@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/YaleSpinup/minion/jobs"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -47,6 +48,8 @@ func (l *loader) run(ctx context.Context) error {
 
 	l.jobsCache.Mux.Lock()
 	defer l.jobsCache.Mux.Unlock()
+
+	cache := make(map[string]*jobs.Job)
 	for name := range l.accounts {
 		jobs, err := l.jobsRepository.List(ctx, name)
 		if err != nil {
@@ -63,10 +66,17 @@ func (l *loader) run(ctx context.Context) error {
 
 			log.Debugf("got job details: %+v", job)
 			l.jobsCache.Cache[j] = job
+			cache[j] = job
 		}
 	}
 
-	log.Infof("%s done loading jobs", l.id)
+	for k := range l.jobsCache.Cache {
+		if _, ok := cache[k]; !ok {
+			delete(l.jobsCache.Cache, k)
+		}
+	}
+
+	log.Infof("%s done loading %d jobs", l.id, len(l.jobsCache.Cache))
 
 	return nil
 }
