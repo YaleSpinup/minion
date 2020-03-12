@@ -75,7 +75,7 @@ func (e *executer) run(ctx context.Context, runner jobs.Runner, j *jobs.Job) {
 	// defer finalizing the job until we return (success or failure)
 	defer func() {
 		if err := e.jobQueue.Finalize(j.ID); err != nil {
-			log.Errorf("error finalizing job %s: %s", j.ID, err)
+			log.Errorf("%s: error finalizing job %s: %s", e.id, j.ID, err)
 		}
 	}()
 

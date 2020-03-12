@@ -143,7 +143,7 @@ func NewServer(config common.Config) error {
 	}
 	l.refreshInterval = refreshInterval
 
-	// load jobs from durable storage into aa local cache
+	// load jobs from durable storage into a local cache
 	err = l.start(ctx)
 	if err != nil {
 		return err

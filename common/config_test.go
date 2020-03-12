@@ -15,7 +15,7 @@ var testConfig = []byte(
 		},
 		"jobsRepository": {
 			"type": "s3",
-			"RefreshInterval": "60m",
+			"refreshInterval": "60m",
 			"config": {
 				"region": "us-east-1",
 				"akid": "keykeykeykeykeykeykey",
