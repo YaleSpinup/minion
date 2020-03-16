@@ -72,8 +72,6 @@ func (e *executer) loop(ctx context.Context, interval time.Duration) {
 }
 
 func (e *executer) run(ctx context.Context, runner jobs.Runner, j *jobs.Job) {
-	log.SetLevel(log.DebugLevel)
-
 	// defer finalizing the job until we return (success or failure)
 	defer func() {
 		if err := e.jobQueue.Finalize(j.ID); err != nil {
