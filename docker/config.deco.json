@@ -1,4 +1,54 @@
 { 
+  "accounts": {
+    "spinup": {
+      "runners": ["dummyRunner", "instanceRunner"]
+    },
+    "spinupsec": {
+      "runners": ["dummyRunner", "instanceRunner"]
+    }
+  },
+  "jobRunners": {
+    "dummyRunner": {
+      "type": "dummy",
+      "config": {
+        "template": "Hello, {{.Account}}!"
+      }
+    },
+    "instanceRunner": {
+      "type": "instance",
+      "config": {
+        "endpointTemplate": "{{ .instancerunner_endpoint_tmpl }}",
+        "token": "{{ .instancerunner_token }}"
+      }
+    }
+  },
+  "jobsRepository": {
+    "type": "s3",
+    "refreshInterval": "{{ .jobs_repository_refresh_interval }}",
+    "config": {
+      "region": "us-east-1",
+      "akid": "{{ .jobs_repository_akid }}",
+      "secret": "{{ .jobs_repository_secret }}",
+      "bucket": "{{ .jobs_repository_bucket }}",
+      "prefix": "jobs"
+    }
+  },
+  "queueProvider": {
+    "type": "redis",
+    "config": {
+      "host": "{{ .queue_host }}",
+      "port": "{{ .queue_port }}",
+      "database": "{{ .queue_db }}"
+    }
+  },
+  "lockProvider": {
+    "type": "redis",
+    "config": {
+      "host": "{{ .lock_host }}",
+      "port": "{{ .lock_port }}",
+      "database": "{{ .lock_db }}"
+    }
+  },
   "listenAddress": ":8080",
   "token": "{{ .api_token }}",
   "logLevel": "{{ .log_level }}",
