@@ -72,6 +72,8 @@ func (e *executer) loop(ctx context.Context, interval time.Duration) {
 }
 
 func (e *executer) run(ctx context.Context, runner jobs.Runner, j *jobs.Job) {
+	log.SetLevel(log.DebugLevel)
+
 	// defer finalizing the job until we return (success or failure)
 	defer func() {
 		if err := e.jobQueue.Finalize(j.ID); err != nil {
@@ -84,21 +86,23 @@ func (e *executer) run(ctx context.Context, runner jobs.Runner, j *jobs.Job) {
 
 		// run the configured runner
 		out, err := runner.Run(ctx, j.Account, j.Details)
-		if err != nil {
-			log.Errorf("failed running job (%d tries) %s: %s", i, j.ID, err)
-
-			timer := time.NewTimer(5 * time.Second)
-			select {
-			case <-ctx.Done():
-				log.Warnf("cancelling retrying of job %s", j.ID)
-				timer.Stop()
-				return
-			case <-timer.C:
-				log.Infof("retrying job (%d) %s", i, j.ID)
-			}
+		if err == nil {
+			log.Debugf("got output from running job: %s", out)
+			return
 		}
 
-		log.Debugf("got output from running job: %s", out)
-		return
+		log.Errorf("failed running job (%d tries) %s: %s", i, j.ID, err)
+
+		timer := time.NewTimer(5 * time.Second)
+		select {
+		case <-ctx.Done():
+			log.Warnf("cancelling retrying of job %s", j.ID)
+			timer.Stop()
+			return
+		case <-timer.C:
+			log.Infof("retrying job (%d) %s", i, j.ID)
+		}
 	}
+
+	return
 }
