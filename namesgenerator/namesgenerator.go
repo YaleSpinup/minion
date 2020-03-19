@@ -4,6 +4,7 @@ package namesgenerator
 import (
 	"fmt"
 	"math/rand"
+	"time"
 )
 
 var (
@@ -1369,6 +1370,10 @@ var (
 		"sandy",
 	}
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 // GetRandomName generates a random name from the list of adjectives and givennames in this package
 // formatted as "adjective_givenname". For example 'wizardly_camden'. If retry is non-zero, a random
