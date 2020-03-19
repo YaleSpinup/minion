@@ -116,7 +116,7 @@ func TestExecuterRun(t *testing.T) {
 	q.finalize = false
 	newMockExecuter(t, q).run(context.TODO(), r, &jobs.Job{ID: "job1"})
 	if q.finalized {
-		t.Error("queue was not finalized")
+		t.Error("queue was finalized, expected failed finalize")
 	}
 
 	if !r.ran {

@@ -36,12 +36,12 @@ func (s *scheduler) loop(ctx context.Context) {
 }
 
 func (s *scheduler) run(ctx context.Context, now time.Time) {
-	log.Debugf("%s aquiring lock", s.id)
+	log.Debugf("%s acquiring lock", s.id)
 	if err := s.locker.Lock(strconv.FormatInt(now.Unix(), 10), s.id); err != nil {
 		log.Warnf("%s failed to aquire lock, moving on...", s.id)
 		return
 	}
-	log.Debugf("%s aquired lock", s.id)
+	log.Debugf("%s acquired lock", s.id)
 
 	basis := now.Add(time.Duration(-1) * time.Minute).UTC().Truncate(time.Minute)
 

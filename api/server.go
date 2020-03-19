@@ -162,7 +162,7 @@ func NewServer(config common.Config) error {
 	}
 	d.locker = locker
 
-	// load jobs from durable storage into aa local cache
+	// load jobs from durable storage into the local cache
 	err = l.start(ctx)
 	if err != nil {
 		return err
