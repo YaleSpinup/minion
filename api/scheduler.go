@@ -55,6 +55,11 @@ func (s *scheduler) run(ctx context.Context, now time.Time) {
 	for id, job := range s.jobsCache.Cache {
 		log.Debugf("processing job %s schedule %s", id, job.ScheduleExpression)
 
+		if !job.Enabled {
+			log.Debugf("job %s is disabled", id)
+			continue
+		}
+
 		schedule, err := parser.Parse(job.ScheduleExpression)
 		if err != nil {
 			log.Errorf("%s schedule_expression is not a valid cron expression: '%s': %s", id, job.ScheduleExpression, err)
@@ -66,7 +71,9 @@ func (s *scheduler) run(ctx context.Context, now time.Time) {
 
 		if next.Equal(now) {
 			log.Infof("%s enqueing job %s", s.id, id)
-			s.jobQueue.Enqueue(&jobs.QueuedJob{ID: id})
+			if err := s.jobQueue.Enqueue(&jobs.QueuedJob{ID: id}); err != nil {
+				log.Errorf("failed enqueing job %s: %s", id, err)
+			}
 		}
 	}
 

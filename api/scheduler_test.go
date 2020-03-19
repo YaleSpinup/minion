@@ -28,6 +28,11 @@ var schedTestJobCache = jobsCache{
 			Description:        "im broke, dont queue me",
 			ScheduleExpression: "broke",
 		},
+		"disabled-job": &jobs.Job{
+			Description:        "im diabled, dont queue me",
+			ScheduleExpression: "* * * * *",
+			Enabled:            false,
+		},
 	},
 }
 
@@ -58,6 +63,10 @@ func (m *mockSchedQueuer) Enqueue(queued *jobs.QueuedJob) error {
 
 	if queued.ID == "bad-schedule-expression" {
 		m.t.Errorf("bad-schedule-expression shouldn't get queued")
+	}
+
+	if queued.ID == "disabled-job" {
+		m.t.Errorf("disabled-job shouldn't get queued")
 	}
 
 	if !m.queue {
