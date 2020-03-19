@@ -12,7 +12,7 @@ import (
 
 	"github.com/YaleSpinup/minion/common"
 	"github.com/YaleSpinup/minion/jobs"
-	"github.com/google/uuid"
+	"github.com/YaleSpinup/minion/namesgenerator"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
@@ -77,7 +77,7 @@ var Org string
 
 // NewServer creates a new server and starts it
 func NewServer(config common.Config) error {
-	id := uuid.New().String()
+	id := namesgenerator.GetRandomName(0)
 	log.Infof("starting api server with id '%s'", id)
 
 	// TODO: replace this with something else, this is no good
