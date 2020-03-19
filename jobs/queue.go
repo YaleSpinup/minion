@@ -9,11 +9,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type Queue struct {
-	Name       string
-	BackupName string
-	Window     int64
-	client     *redis.Client
+type Queuer interface {
+	Close() error
+	Enqueue(queued *QueuedJob) error
+	Fetch(queued *QueuedJob) error
+	Finalize(id string) error
 }
 
 type QueuedJob struct {
@@ -21,8 +21,15 @@ type QueuedJob struct {
 	Score float64
 }
 
-func NewQueue(name, address, password string, db int, window int64) (*Queue, error) {
-	return &Queue{
+type RedisQueuer struct {
+	BackupName string
+	client     *redis.Client
+	Name       string
+	Window     int64
+}
+
+func NewRedisQueuer(name, address, password string, db int, window int64) (*RedisQueuer, error) {
+	return &RedisQueuer{
 		Name:       name,
 		BackupName: name + "-backup",
 		Window:     window,
@@ -37,7 +44,7 @@ func NewQueue(name, address, password string, db int, window int64) (*Queue, err
 
 }
 
-func (q *Queue) Fetch(queued *QueuedJob) error {
+func (q *RedisQueuer) Fetch(queued *QueuedJob) error {
 	val, err := q.client.BZPopMin(2*time.Second, q.Name).Result()
 	if err != nil {
 		if err == redis.Nil {
@@ -72,7 +79,7 @@ func (q *Queue) Fetch(queued *QueuedJob) error {
 }
 
 // Add jobs to both sets
-func (q *Queue) Enqueue(queued *QueuedJob) error {
+func (q *RedisQueuer) Enqueue(queued *QueuedJob) error {
 	log.Debugf("enqueuing job %s", queued.ID)
 
 	if err := q.enqueue(q.Name, queued.Score, queued.ID); err != nil {
@@ -88,7 +95,7 @@ func (q *Queue) Enqueue(queued *QueuedJob) error {
 
 // Finalize does the final steps once a job is completed successfully, currently this
 // is just dequeuing the backup job created when the job was queued.
-func (q *Queue) Finalize(id string) error {
+func (q *RedisQueuer) Finalize(id string) error {
 	log.Debugf("finalizing job %s", id)
 
 	if err := q.dequeue(q.BackupName, id); err != nil {
@@ -98,11 +105,11 @@ func (q *Queue) Finalize(id string) error {
 }
 
 // Close the redis client connection
-func (q *Queue) Close() error {
-	return q.client.Close()
+func (q *RedisQueuer) Close() error {
+	return q.Close()
 }
 
-func (q *Queue) dequeue(setName string, id string) error {
+func (q *RedisQueuer) dequeue(setName string, id string) error {
 	if err := q.client.ZRem(setName, id).Err(); err != nil {
 		return errors.Wrap(err, "failed removing job "+id)
 	}
@@ -110,7 +117,7 @@ func (q *Queue) dequeue(setName string, id string) error {
 	return nil
 }
 
-func (q *Queue) enqueue(setName string, timestamp float64, id string) error {
+func (q *RedisQueuer) enqueue(setName string, timestamp float64, id string) error {
 	if err := q.client.ZAdd(setName, redis.Z{
 		Score:  float64(timestamp),
 		Member: id,

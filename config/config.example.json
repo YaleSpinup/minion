@@ -30,9 +30,16 @@
       "prefix": "jobs"
     }
   },
+  "queueProvider": {
+    "type": "redis",
+    "config": {
+      "host": "127.0.0.1",
+      "port": 6379,
+      "database": 2
+    }
+  },
   "lockProvider": {
     "type": "redis",
-    "ttl": "5m",
     "config": {
       "host": "127.0.0.1",
       "port": 6379,

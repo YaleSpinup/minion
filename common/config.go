@@ -17,6 +17,7 @@ type Config struct {
 	LockProvider   LockProvider
 	Token          string
 	LogLevel       string
+	QueueProvider  QueueProvider
 	Version        Version
 	Org            string
 }
@@ -40,6 +41,11 @@ type JobsRepository struct {
 type LockProvider struct {
 	Type   string
 	TTL    string
+	Config map[string]interface{}
+}
+
+type QueueProvider struct {
+	Type   string
 	Config map[string]interface{}
 }
 
