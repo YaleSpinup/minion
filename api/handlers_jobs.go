@@ -16,6 +16,8 @@ func (s *server) JobsCreateHandler(w http.ResponseWriter, r *http.Request) {
 	w = LogWriter{w}
 	vars := mux.Vars(r)
 	account := vars["account"]
+	group := vars["group"]
+
 	if _, ok := s.accounts[account]; !ok {
 		msg := fmt.Sprintf("account not found: %s", account)
 		handleError(w, apierror.New(apierror.ErrNotFound, msg, nil))
@@ -32,10 +34,11 @@ func (s *server) JobsCreateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	input.Account = account
+	input.Group = group
 
 	log.Debugf("decoded request body into job input %+v", input)
 
-	out, err := s.jobsRepository.Create(r.Context(), account, &input)
+	out, err := s.jobsRepository.Create(r.Context(), account, group, &input)
 	if err != nil {
 		handleError(w, err)
 		return
@@ -57,6 +60,7 @@ func (s *server) JobsCreateHandler(w http.ResponseWriter, r *http.Request) {
 func (s *server) JobsListHandler(w http.ResponseWriter, r *http.Request) {
 	w = LogWriter{w}
 	vars := mux.Vars(r)
+	group := vars["group"]
 	account := vars["account"]
 	if _, ok := s.accounts[account]; !ok {
 		msg := fmt.Sprintf("account not found: %s", account)
@@ -64,9 +68,9 @@ func (s *server) JobsListHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Infof("listing jobs for account %s from repository", account)
+	log.Infof("listing jobs for account '%s', group '%s' from repository", account, group)
 
-	list, err := s.jobsRepository.List(r.Context(), account)
+	list, err := s.jobsRepository.List(r.Context(), account, group)
 	if err != nil {
 		handleError(w, err)
 		return
@@ -89,6 +93,7 @@ func (s *server) JobsShowHandler(w http.ResponseWriter, r *http.Request) {
 	w = LogWriter{w}
 	vars := mux.Vars(r)
 	account := vars["account"]
+	group := vars["group"]
 	id := vars["id"]
 
 	if _, ok := s.accounts[account]; !ok {
@@ -99,7 +104,7 @@ func (s *server) JobsShowHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Infof("showing job %s for account %s from repository", id, account)
 
-	job, err := s.jobsRepository.Get(r.Context(), account, id)
+	job, err := s.jobsRepository.Get(r.Context(), account, group, id)
 	if err != nil {
 		handleError(w, err)
 		return
@@ -122,6 +127,7 @@ func (s *server) JobsUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	w = LogWriter{w}
 	vars := mux.Vars(r)
 	account := vars["account"]
+	group := vars["group"]
 	id := vars["id"]
 
 	if _, ok := s.accounts[account]; !ok {
@@ -144,7 +150,7 @@ func (s *server) JobsUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Debugf("decoded request body into job input %+v", input)
 
-	out, err := s.jobsRepository.Update(r.Context(), account, id, &input)
+	out, err := s.jobsRepository.Update(r.Context(), account, group, id, &input)
 	if err != nil {
 		handleError(w, err)
 		return
@@ -167,6 +173,7 @@ func (s *server) JobsDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	w = LogWriter{w}
 	vars := mux.Vars(r)
 	account := vars["account"]
+	group := vars["group"]
 	id := vars["id"]
 
 	if _, ok := s.accounts[account]; !ok {
@@ -175,9 +182,9 @@ func (s *server) JobsDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Infof("deleting job '%s' for account %s fromt repository", id, account)
+	log.Infof("deleting job %s/%s/%s from repository", account, group, id)
 
-	err := s.jobsRepository.Delete(r.Context(), account, id)
+	err := s.jobsRepository.Delete(r.Context(), account, group, id)
 	if err != nil {
 		handleError(w, err)
 		return
@@ -193,6 +200,7 @@ func (s *server) JobsRunHandler(w http.ResponseWriter, r *http.Request) {
 	w = LogWriter{w}
 	vars := mux.Vars(r)
 	acct := vars["account"]
+	group := vars["group"]
 	id := vars["id"]
 
 	account, ok := s.accounts[acct]
@@ -202,10 +210,10 @@ func (s *server) JobsRunHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Debugf("queuing job '%s' for account %s", id, acct)
+	log.Debugf("queuing job %s/%s/%s", acct, group, id)
 
 	// get the job details from the jobs repostory
-	job, err := s.jobsRepository.Get(r.Context(), acct, id)
+	job, err := s.jobsRepository.Get(r.Context(), acct, group, id)
 	if err != nil {
 		handleError(w, err)
 		return
@@ -235,7 +243,7 @@ func (s *server) JobsRunHandler(w http.ResponseWriter, r *http.Request) {
 				w.Write([]byte("runner not found for account"))
 			}
 
-			if err := s.jobQueue.Enqueue(&jobs.QueuedJob{ID: id}); err != nil {
+			if err := s.jobQueue.Enqueue(&jobs.QueuedJob{ID: group + "/" + id}); err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				w.Write([]byte("failed queuing job " + err.Error()))
 				return

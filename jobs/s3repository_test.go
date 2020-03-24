@@ -30,6 +30,7 @@ type mockS3Client struct {
 
 var testJobs = map[string]Job{
 	"a6d1b5a6-3a76-4d52-8856-b752afea563a": Job{
+		Account:     "metal",
 		ID:          "a6d1b5a6-3a76-4d52-8856-b752afea563a",
 		Description: "first studio album",
 		Details: map[string]string{
@@ -52,6 +53,7 @@ var testJobs = map[string]Job{
 		ScheduleExpression: "00 00 25 07 *",
 	},
 	"55ac40d3-a902-4c70-a5b7-3e4a8679e315": Job{
+		Account:     "metal",
 		ID:          "55ac40d3-a902-4c70-a5b7-3e4a8679e315",
 		Description: "second studio album",
 		Details: map[string]string{
@@ -72,6 +74,7 @@ var testJobs = map[string]Job{
 		ScheduleExpression: "00 00 27 07 *",
 	},
 	"f2e4ad2f-b130-4d48-83a1-2d8e842e6eec": Job{
+		Account:     "metal",
 		ID:          "f2e4ad2f-b130-4d48-83a1-2d8e842e6eec",
 		Description: "third studio album",
 		Details: map[string]string{
@@ -92,6 +95,7 @@ var testJobs = map[string]Job{
 		ScheduleExpression: "00 00 03 03 *",
 	},
 	"30b83d8a-163d-429a-86d8-beb34c266078": Job{
+		Account:     "metal",
 		ID:          "30b83d8a-163d-429a-86d8-beb34c266078",
 		Description: "fourth studio album",
 		Details: map[string]string{
@@ -164,7 +168,7 @@ func (m *mockS3Client) ListObjectsV2WithContext(ctx aws.Context, input *s3.ListO
 		return nil, m.err
 	}
 
-	if aws.StringValue(input.Prefix) == "/test" {
+	if aws.StringValue(input.Prefix) == "/test/group" {
 		contents := []*s3.Object{}
 		for k := range testJobs {
 			key := aws.StringValue(input.Prefix) + "/" + k
@@ -205,16 +209,21 @@ func TestCreate(t *testing.T) {
 	}
 
 	type createTest struct {
-		job *Job
-		err error
+		account, group string
+		job            *Job
+		err            error
 	}
 
 	tests := []createTest{
 		createTest{
-			job: nil,
-			err: errors.New("derp"),
+			job:     nil,
+			account: "test",
+			group:   "foo",
+			err:     errors.New("derp"),
 		},
 		createTest{
+			account: "test",
+			group:   "foo",
 			job: &Job{
 				ScheduleExpression: "@hourly",
 			},
@@ -222,17 +231,25 @@ func TestCreate(t *testing.T) {
 		},
 	}
 	for _, v := range testJobs {
-		tests = append(tests, createTest{&v, nil})
+		tests = append(tests, createTest{
+			account: v.Account,
+			group:   v.Group,
+			job:     &v,
+			err:     nil,
+		})
 	}
 
 	for _, tst := range tests {
 		input := tst.job
+		inputAccout := tst.account
+		inputGroup := tst.group
 
 		var expected *Job
 		if input == nil {
 			expected = nil
 		} else {
 			expected = &Job{
+				Account:            input.Account,
 				Description:        input.Description,
 				Details:            input.Details,
 				Enabled:            input.Enabled,
@@ -245,7 +262,7 @@ func TestCreate(t *testing.T) {
 			}
 		}
 
-		j, err := s.Create(context.TODO(), "test", input)
+		j, err := s.Create(context.TODO(), inputAccout, inputGroup, input)
 		if tst.err == nil && err != nil {
 			t.Errorf("expected nil error, got %s", err)
 		} else if tst.err != nil && err == nil {
@@ -290,6 +307,7 @@ func TestDelete(t *testing.T) {
 
 	type deleteTest struct {
 		account string
+		group   string
 		id      string
 		err     error
 	}
@@ -298,27 +316,37 @@ func TestDelete(t *testing.T) {
 		deleteTest{
 			account: "unknown",
 			id:      "",
+			group:   "foo",
+			err:     errors.New("derp"),
+		},
+		deleteTest{
+			account: "no-group",
+			id:      "some-id",
+			group:   "",
 			err:     errors.New("derp"),
 		},
 		deleteTest{
 			account: "bad",
 			id:      "some-id",
+			group:   "foo",
 			err:     errors.New("derp"),
 		},
 		deleteTest{
 			account: "good",
 			id:      "some-id",
+			group:   "foo",
 			err:     nil,
 		},
 		deleteTest{
 			account: "",
 			id:      "some-id",
+			group:   "foo",
 			err:     errors.New("derp"),
 		},
 	}
 
 	for _, tst := range testJobs {
-		err := s.Delete(context.TODO(), tst.account, tst.id)
+		err := s.Delete(context.TODO(), tst.account, tst.group, tst.id)
 		if tst.err == nil && err != nil {
 			t.Errorf("expected nil error, got %s", err)
 		} else if tst.err != nil && err == nil {
@@ -334,30 +362,41 @@ func TestUpdate(t *testing.T) {
 	}
 
 	type updateTest struct {
-		job *Job
-		err error
+		id, group string
+		job       *Job
+		err       error
 	}
 
 	tests := []updateTest{
 		updateTest{
-			job: nil,
-			err: errors.New("derp"),
+			job:   nil,
+			id:    "foo",
+			group: "foo",
+			err:   errors.New("derp"),
 		},
 	}
 	for _, v := range testJobs {
-		tests = append(tests, updateTest{&v, nil})
+		tests = append(tests, updateTest{
+			job:   &v,
+			id:    v.ID,
+			group: v.Group,
+			err:   nil,
+		})
 	}
 
 	for _, tst := range tests {
 		input := tst.job
-		inputId := ""
+		inputId := tst.id
+		inputGroup := tst.group
 
 		var expected *Job
 		if input == nil {
 			expected = nil
 		} else {
 			inputId = input.ID
+			inputGroup = input.Group
 			expected = &Job{
+				Account:            input.Account,
 				Description:        input.Description,
 				Details:            input.Details,
 				Enabled:            input.Enabled,
@@ -372,7 +411,7 @@ func TestUpdate(t *testing.T) {
 
 		t.Log("testing with input: ", input)
 
-		j, err := s.Update(context.TODO(), "test", inputId, input)
+		j, err := s.Update(context.TODO(), "test", inputGroup, inputId, input)
 		if tst.err == nil && err != nil {
 			t.Errorf("expected nil error, got %s", err)
 		} else if tst.err != nil && err == nil {
@@ -419,6 +458,7 @@ func TestGet(t *testing.T) {
 
 	for k, v := range testJobs {
 		expected := &Job{
+			Account:            v.Account,
 			Description:        v.Description,
 			Details:            v.Details,
 			Enabled:            v.Enabled,
@@ -430,7 +470,7 @@ func TestGet(t *testing.T) {
 			ScheduleExpression: v.ScheduleExpression,
 		}
 
-		out, err := s.Get(context.TODO(), "test", k)
+		out, err := s.Get(context.TODO(), "test", "foo", k)
 		if err != nil {
 			t.Errorf("expected nil error, got %s", err)
 		}
@@ -447,7 +487,7 @@ func TestGet(t *testing.T) {
 		}
 	}
 
-	_, err := s.Get(context.TODO(), "test", "some-other-job")
+	_, err := s.Get(context.TODO(), "test", "foo", "some-other-job")
 	if err == nil {
 		t.Error("expected error for missing key, got nil")
 	}
@@ -464,7 +504,7 @@ func TestList(t *testing.T) {
 		expected = append(expected, k)
 	}
 
-	out, err := s.List(context.TODO(), "test")
+	out, err := s.List(context.TODO(), "test", "group")
 	if err != nil {
 		t.Errorf("expected nil error, got %s", err)
 	}
@@ -482,7 +522,7 @@ func TestList(t *testing.T) {
 		}
 	}
 
-	_, err = s.List(context.TODO(), "foo")
+	_, err = s.List(context.TODO(), "foo", "group")
 	if err == nil {
 		t.Error("expected error, got nil")
 	}
