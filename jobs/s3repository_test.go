@@ -138,11 +138,18 @@ func (m *mockS3Client) DeleteObjectWithContext(ctx aws.Context, input *s3.Delete
 		return nil, m.err
 	}
 
-	if strings.HasPrefix(aws.StringValue(input.Key), "/bad") {
+	if strings.HasSuffix(aws.StringValue(input.Key), "/bad") {
 		return nil, awserr.New(s3.ErrCodeNoSuchKey, "missing key", nil)
 	}
 
 	return &s3.DeleteObjectOutput{}, nil
+}
+
+func (m *mockS3Client) DeleteObjectsWithContext(ctx aws.Context, input *s3.DeleteObjectsInput, opts ...request.Option) (*s3.DeleteObjectsOutput, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	return &s3.DeleteObjectsOutput{}, nil
 }
 
 func (m *mockS3Client) GetObjectWithContext(ctx aws.Context, input *s3.GetObjectInput, opts ...request.Option) (*s3.GetObjectOutput, error) {
@@ -302,7 +309,8 @@ func TestCreate(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	s := S3Repository{
-		S3: newMockS3Client(t, nil),
+		S3:     newMockS3Client(t, nil),
+		Bucket: "binge",
 	}
 
 	type deleteTest struct {
@@ -313,40 +321,48 @@ func TestDelete(t *testing.T) {
 	}
 
 	testJobs := []deleteTest{
+		// unknown account, good group, no id
 		deleteTest{
 			account: "unknown",
 			id:      "",
-			group:   "foo",
+			group:   "group",
 			err:     errors.New("derp"),
 		},
+		// good account, unknown group, no id
 		deleteTest{
-			account: "no-group",
-			id:      "some-id",
-			group:   "",
+			account: "test",
+			id:      "",
+			group:   "unknown",
 			err:     errors.New("derp"),
 		},
+		// good account, good group, no id
 		deleteTest{
-			account: "bad",
-			id:      "some-id",
-			group:   "foo",
-			err:     errors.New("derp"),
-		},
-		deleteTest{
-			account: "good",
-			id:      "some-id",
-			group:   "foo",
+			account: "test",
+			id:      "",
+			group:   "group",
 			err:     nil,
 		},
+		// bad id
 		deleteTest{
-			account: "",
-			id:      "some-id",
-			group:   "foo",
+			account: "test",
+			id:      "bad",
+			group:   "group",
 			err:     errors.New("derp"),
+		},
+		// good id
+		deleteTest{
+			account: "test",
+			id:      "some-id",
+			group:   "group",
+			err:     nil,
 		},
 	}
 
 	for _, tst := range testJobs {
+		t.Logf("testing delete with %+v", tst)
+
 		err := s.Delete(context.TODO(), tst.account, tst.group, tst.id)
+		t.Log("got err: ", err)
 		if tst.err == nil && err != nil {
 			t.Errorf("expected nil error, got %s", err)
 		} else if tst.err != nil && err == nil {

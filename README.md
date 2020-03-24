@@ -12,10 +12,14 @@ GET /v1/minion/version
 GET /v1/minion/metrics
 
 GET /v1/minion/{account}/jobs
-POST /v1/minion/{account}/jobs
-GET /v1/minion/{account}/jobs/{id}
-PUT /v1/minion/{account}/jobs/{id}
-DELETE /v1/minion/{account}/jobs/{id}
+GET /v1/minion/{account}/jobs/{group}
+POST /v1/minion/{account}/jobs/{group}
+GET /v1/minion/{account}/jobs/{group}/{id}
+PUT /v1/minion/{account}/jobs/{group}/{id}
+DELETE /v1/minion/{account}/jobs/{group}
+DELETE /v1/minion/{account}/jobs/{group}/{id}
+
+PATCH /v1/minion/{account}/jobs/{group}/{id}
 ```
 
 ## Usage
@@ -74,7 +78,7 @@ An instance runner job executes an action on an instance.  Currently supported a
 
 ## Create a Job
 
-POST `/v1/minion/{account}/jobs`
+POST `/v1/minion/{account}/jobs/space-xy`
 
 ### Request
 
@@ -112,7 +116,7 @@ POST `/v1/minion/{account}/jobs`
 
 ## Update a Job
 
-PUT `/v1/minion/{account}/jobs/{id}`
+PUT `/v1/minion/{account}/jobs/space-xy/6bcfa79f-615e-470d-97c1-687f3357497d`
 
 ### Request
 
@@ -149,7 +153,7 @@ PUT `/v1/minion/{account}/jobs/{id}`
 }
 ```
 
-## List Jobs
+## List Jobs in an account
 
 GET `/v1/minion/{account}/jobs`
 
@@ -157,16 +161,29 @@ GET `/v1/minion/{account}/jobs`
 
 ```json
 [
+    "space-xy/11e7b876-7a10-4c3e-93a7-e77eb3c68b58",
+    "space-xy/6bcfa79f-615e-470d-97c1-687f3357497d",
+    "space-ab/747f437a-a4af-48b2-a021-888bb8943a9b",
+    "space-ab/7cf7433f-f6c2-496e-8fe9-ed4776d130c1"
+]
+```
+
+## List Jobs in a space
+
+GET `/v1/minion/{account}/jobs/space-xy`
+
+### Response
+
+```json
+[
     "11e7b876-7a10-4c3e-93a7-e77eb3c68b58",
-    "6bcfa79f-615e-470d-97c1-687f3357497d",
-    "747f437a-a4af-48b2-a021-888bb8943a9b",
-    "7cf7433f-f6c2-496e-8fe9-ed4776d130c1"
+    "6bcfa79f-615e-470d-97c1-687f3357497d"
 ]
 ```
 
 ## Get a Job
 
-GET `/v1/minion/{account}/jobs/{id}`
+GET `/v1/minion/{account}/jobs/space-xy/6bcfa79f-615e-470d-97c1-687f3357497d`
 
 ```json
 {
@@ -186,7 +203,20 @@ GET `/v1/minion/{account}/jobs/{id}`
 
 ## Delete a Job
 
-DELETE `/v1/minion/{account}/jobs/{id}`
+DELETE `/v1/minion/{account}/jobs/space-xy/6bcfa79f-615e-470d-97c1-687f3357497d`
+
+## Delete all jobs in a group
+
+DELETE `/v1/minion/{account}/jobs/space-xy`
+
+## Run a Job
+
+PATCH `/v1/minion/{account}/jobs/space-xy/6bcfa79f-615e-470d-97c1-687f3357497d`
+
+Note: At the moment, this checks if the job exists in the jobs repository and then adds it to the
+jobs queue.  There is a potential race condition, since the jobs queue reads from the local cache
+when executing jobs, so it may be missing if it was just created and hasn't been cached by the
+loader yet.
 
 ## Author
 
