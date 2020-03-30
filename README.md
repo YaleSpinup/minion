@@ -84,15 +84,27 @@ POST `/v1/minion/{account}/jobs/space-xy`
 
 ```json
 {
-    "description": "Do some dumb thing to my server",
-    "details": {
-        "runner": "dummyRunner",
+    "job": {
+        "description": "Do some dumb thing to my server",
+        "details": {
+            "runner": "dummyRunner",
+        },
+        "group": "space-xy",
+        "modified_by": "someone",
+        "name": "dummy-spin1234567",
+        "schedule_expression": "* * * ? *",
+        "enabled": true
     },
-    "group": "space-xy",
-    "modified_by": "someone",
-    "name": "dummy-spin1234567",
-    "schedule_expression": "* * * ? *",
-    "enabled": true
+    "tags": [
+        {
+            "key": "foo",
+            "value": "bar"
+        },
+        {
+            "key": "baz",
+            "value": "biz"
+        }
+    ]
 }
 ```
 
@@ -100,17 +112,29 @@ POST `/v1/minion/{account}/jobs/space-xy`
 
 ```json
 {
-    "description": "Do some dumb thing to my server",
-    "details": {
-        "runner": "dummyRunner",
+    "job": {
+        "description": "Do some dumb thing to my server",
+        "details": {
+            "runner": "dummyRunner",
+        },
+        "group": "space-xy",
+        "id": "6bcfa79f-615e-470d-97c1-687f3357497d",
+        "modified_at": "2020-02-27T16:22:09Z",
+        "modified_by": "someone",
+        "name": "dummy-spin1234567",
+        "schedule_expression": "* * * ? *",
+        "enabled": true,
     },
-    "group": "space-xy",
-    "id": "6bcfa79f-615e-470d-97c1-687f3357497d",
-    "modified_at": "2020-02-27T16:22:09Z",
-    "modified_by": "someone",
-    "name": "dummy-spin1234567",
-    "schedule_expression": "* * * ? *",
-    "enabled": true
+    "tags": [
+        {
+            "key": "foo",
+            "value": "bar"
+        },
+        {
+            "key": "baz",
+            "value": "biz"
+        }
+    ]
 }
 ```
 
@@ -122,16 +146,28 @@ PUT `/v1/minion/{account}/jobs/space-xy/6bcfa79f-615e-470d-97c1-687f3357497d`
 
 ```json
 {
-    "description": "Do some dumb thing to my server",
-    "details": {
-        "runner": "dummyRunner",
+    "job": {
+        "description": "Do some dumb thing to my server",
+        "details": {
+            "runner": "dummyRunner",
+        },
+        "group": "space-xy",
+        "id": "6bcfa79f-615e-470d-97c1-687f3357497d",
+        "modified_by": "someone",
+        "name": "dummy-spin1234567",
+        "schedule_expression": "* * * ? *",
+        "enabled": false
     },
-    "group": "space-xy",
-    "id": "6bcfa79f-615e-470d-97c1-687f3357497d",
-    "modified_by": "someone",
-    "name": "dummy-spin1234567",
-    "schedule_expression": "* * * ? *",
-    "enabled": false
+    "tags": [
+        {
+            "key": "foo",
+            "value": "bar"
+        },
+        {
+            "key": "baz",
+            "value": "biz"
+        }
+    ]
 }
 ```
 
@@ -139,17 +175,29 @@ PUT `/v1/minion/{account}/jobs/space-xy/6bcfa79f-615e-470d-97c1-687f3357497d`
 
 ```json
 {
-    "description": "Do some dumb thing to my server",
-    "details": {
-        "runner": "dummyRunner",
+    "job": {
+        "description": "Do some dumb thing to my server",
+        "details": {
+            "runner": "dummyRunner",
+        },
+        "group": "space-xy",
+        "id": "6bcfa79f-615e-470d-97c1-687f3357497d",
+        "modified_at": "2020-02-28T16:22:09Z",
+        "modified_by": "someone",
+        "name": "dummy-spin1234567",
+        "schedule_expression": "* * * ? *",
+        "enabled": false
     },
-    "group": "space-xy",
-    "id": "6bcfa79f-615e-470d-97c1-687f3357497d",
-    "modified_at": "2020-02-28T16:22:09Z",
-    "modified_by": "someone",
-    "name": "dummy-spin1234567",
-    "schedule_expression": "* * * ? *",
-    "enabled": false
+    "tags": [
+        {
+            "key": "foo",
+            "value": "bar"
+        },
+        {
+            "key": "baz",
+            "value": "biz"
+        }
+    ]
 }
 ```
 
@@ -187,17 +235,29 @@ GET `/v1/minion/{account}/jobs/space-xy/6bcfa79f-615e-470d-97c1-687f3357497d`
 
 ```json
 {
-    "description": "Do some dumb thing to my server",
-    "details": {
-        "runner": "dummyRunner",
+    "job": {
+        "description": "Do some dumb thing to my server",
+        "details": {
+            "runner": "dummyRunner",
+        },
+        "group": "space-xy",
+        "id": "6bcfa79f-615e-470d-97c1-687f3357497d",
+        "modified_at": "2020-02-28T16:22:09Z",
+        "modified_by": "someone",
+        "name": "dummy-spin1234567",
+        "schedule_expression": "* * * ? *",
+        "enabled": true
     },
-    "group": "space-xy",
-    "id": "6bcfa79f-615e-470d-97c1-687f3357497d",
-    "modified_at": "2020-02-28T16:22:09Z",
-    "modified_by": "someone",
-    "name": "dummy-spin1234567",
-    "schedule_expression": "* * * ? *",
-    "enabled": true
+    "tags": [
+        {
+            "key": "foo",
+            "value": "bar"
+        },
+        {
+            "key": "baz",
+            "value": "biz"
+        }
+    ]
 }
 ```
 

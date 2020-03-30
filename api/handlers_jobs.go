@@ -24,24 +24,46 @@ func (s *server) JobsCreateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Infof("creating job for account %s", account)
+	log.Infof("creating job for account %s, group %s", account, group)
 
-	input := jobs.Job{}
+	input := struct {
+		Job  *jobs.Job
+		Tags []*jobs.Tag
+	}{}
+
 	err := json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
 		msg := fmt.Sprintf("cannot decode body into create job input: %s", err)
 		handleError(w, apierror.New(apierror.ErrBadRequest, msg, err))
 		return
 	}
-	input.Account = account
-	input.Group = group
+
+	if input.Job == nil {
+		handleError(w, apierror.New(apierror.ErrBadRequest, "job cannot be nil", nil))
+		return
+	}
+	input.Job.Account = account
+	input.Job.Group = group
 
 	log.Debugf("decoded request body into job input %+v", input)
 
-	out, err := s.jobsRepository.Create(r.Context(), account, group, &input)
+	job, err := s.jobsRepository.Create(r.Context(), account, group, input.Job)
 	if err != nil {
 		handleError(w, err)
 		return
+	}
+
+	if err := s.logger.createLog(r.Context(), group, job.ID, input.Tags); err != nil {
+		handleError(w, apierror.New(apierror.ErrInternalError, "failed creating job audit log", err))
+		return
+	}
+
+	out := struct {
+		Job  *jobs.Job   `json:"job"`
+		Tags []*jobs.Tag `json:"tags"`
+	}{
+		Job:  job,
+		Tags: input.Tags,
 	}
 
 	j, err := json.Marshal(&out)
@@ -110,7 +132,15 @@ func (s *server) JobsShowHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	j, err := json.Marshal(&job)
+	out := struct {
+		Job  *jobs.Job   `json:"job"`
+		Tags []*jobs.Tag `json:"tags"`
+	}{
+		Job: job,
+		// Tags: TODO,
+	}
+
+	j, err := json.Marshal(&out)
 	if err != nil {
 		msg := fmt.Sprintf("cannot encode job into json: %s", err)
 		handleError(w, apierror.New(apierror.ErrBadRequest, msg, err))
@@ -136,24 +166,53 @@ func (s *server) JobsUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Infof("updating job '%s' for account %s from repository", id, account)
+	log.Infof("updating job '%s' for account %s, group %s", id, account, group)
 
-	input := jobs.Job{}
+	input := struct {
+		Job  *jobs.Job
+		Tags []*jobs.Tag
+	}{}
+
 	err := json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
 		msg := fmt.Sprintf("cannot decode body into create job input: %s", err)
 		handleError(w, apierror.New(apierror.ErrBadRequest, msg, err))
 		return
 	}
-	input.ID = id
-	input.Account = account
+
+	if input.Job == nil {
+		handleError(w, apierror.New(apierror.ErrBadRequest, "job cannot be nil", nil))
+		return
+	}
+	input.Job.ID = id
+	input.Job.Account = account
+	input.Job.Group = group
 
 	log.Debugf("decoded request body into job input %+v", input)
 
-	out, err := s.jobsRepository.Update(r.Context(), account, group, id, &input)
+	// get the job to be sure it exists
+	if _, err := s.jobsRepository.Get(r.Context(), account, group, id); err != nil {
+		handleError(w, err)
+		return
+	}
+
+	job, err := s.jobsRepository.Update(r.Context(), account, group, id, input.Job)
 	if err != nil {
 		handleError(w, err)
 		return
+	}
+
+	if err := s.logger.createLog(r.Context(), group, job.ID, input.Tags); err != nil {
+		handleError(w, apierror.New(apierror.ErrInternalError, "failed updating job audit log", err))
+		return
+	}
+
+	out := struct {
+		Job  *jobs.Job   `json:"job"`
+		Tags []*jobs.Tag `json:"tags"`
+	}{
+		Job:  job,
+		Tags: input.Tags,
 	}
 
 	j, err := json.Marshal(&out)

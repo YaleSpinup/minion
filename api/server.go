@@ -42,6 +42,7 @@ type server struct {
 	jobQueue       jobs.Queuer
 	jobsRepository jobs.Repository
 	jobRunners     map[string]jobs.Runner
+	logger         *logger
 	router         *mux.Router
 	version        common.Version
 }
@@ -70,6 +71,7 @@ type executer struct {
 	jobsCache  *jobsCache
 	jobQueue   jobs.Queuer
 	jobRunners map[string]jobs.Runner
+	logger     *logger
 }
 
 // Org will carry throughout the api and get tagged on resources
@@ -92,6 +94,7 @@ func NewServer(config common.Config) error {
 	s := server{
 		accounts:   make(map[string]common.Account),
 		jobRunners: make(map[string]jobs.Runner),
+		logger:     newLogger(Org, config.LogProvider),
 		router:     mux.NewRouter(),
 		version:    config.Version,
 	}
@@ -107,6 +110,7 @@ func NewServer(config common.Config) error {
 		id:         id,
 		jobRunners: make(map[string]jobs.Runner),
 		jobsCache:  jobsCache,
+		logger:     newLogger(Org, config.LogProvider),
 	}
 
 	d := scheduler{

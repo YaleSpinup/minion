@@ -11,6 +11,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Tag is a key value struct for holding
+// tag information
+type Tag struct {
+	Key   string
+	Value string
+}
+
 // Job is the detail about a job
 type Job struct {
 	Account            string

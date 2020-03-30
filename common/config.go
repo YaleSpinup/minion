@@ -15,6 +15,7 @@ type Config struct {
 	JobRunners     map[string]JobRunner
 	ListenAddress  string
 	LockProvider   LockProvider
+	LogProvider    LogProvider
 	Token          string
 	LogLevel       string
 	QueueProvider  QueueProvider
@@ -42,6 +43,12 @@ type LockProvider struct {
 	Type   string
 	TTL    string
 	Config map[string]interface{}
+}
+
+type LogProvider struct {
+	Region string
+	Akid   string
+	Secret string
 }
 
 type QueueProvider struct {

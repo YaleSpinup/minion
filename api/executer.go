@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/YaleSpinup/minion/jobs"
@@ -72,11 +73,19 @@ func (e *executer) loop(ctx context.Context, interval time.Duration) {
 }
 
 func (e *executer) run(ctx context.Context, runner jobs.Runner, j *jobs.Job) {
+	logctx, closeLog := context.WithCancel(context.Background())
+	logGroup := j.Group
+	if e.logger.prefix != "" {
+		logGroup = e.logger.prefix + "-" + logGroup
+	}
+	logStream := e.logger.log(logctx, logGroup, j.ID)
+
 	// defer finalizing the job until we return (success or failure)
 	defer func() {
 		if err := e.jobQueue.Finalize(j.ID); err != nil {
 			log.Errorf("%s: error finalizing job %s: %s", e.id, j.ID, err)
 		}
+		closeLog()
 	}()
 
 	for i := 1; i <= 3; i++ {
@@ -85,16 +94,21 @@ func (e *executer) run(ctx context.Context, runner jobs.Runner, j *jobs.Job) {
 		// run the configured runner
 		out, err := runner.Run(ctx, j.Account, j.Details)
 		if err == nil {
+			logStream <- out
 			log.Debugf("got output from running job: %s", out)
 			return
 		}
 
-		log.Errorf("failed running job (%d tries) %s: %s", i, j.ID, err)
+		msg := fmt.Sprintf("failed running job (%d tries) %s: %s", i, j.ID, err)
+		log.Error(msg)
+		logStream <- msg
 
 		timer := time.NewTimer(5 * time.Second)
 		select {
 		case <-ctx.Done():
-			log.Warnf("cancelling retrying of job %s", j.ID)
+			msg := fmt.Sprintf("cancelling retrying of job %s", j.ID)
+			logStream <- msg
+			log.Warn(msg)
 			timer.Stop()
 			return
 		case <-timer.C:

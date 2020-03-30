@@ -36,7 +36,7 @@ func (r *DummyRunner) Run(ctx context.Context, account string, parameters interf
 		return "", errors.New("account is required")
 	}
 
-	log.Infof("running dummy runner %+v in account %s,  with parameters %+v", r, account, parameters)
+	log.Infof("running dummy runner %+v in account %s, with parameters %+v", r, account, parameters)
 
 	input := struct {
 		Account string
@@ -49,7 +49,7 @@ func (r *DummyRunner) Run(ctx context.Context, account string, parameters interf
 
 	var out bytes.Buffer
 	if err := tmpl.Execute(&out, &input); err != nil {
-		return "", NewRunnerError(ErrPreExecFailure, "template parsing failed", err)
+		return "", NewRunnerError(ErrPreExecFailure, "template execution failed", err)
 	}
 
 	msg := out.String()
