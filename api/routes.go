@@ -13,11 +13,15 @@ func (s *server) routes() {
 	api.Handle("/metrics", promhttp.Handler()).Methods(http.MethodGet)
 
 	api.HandleFunc("/{account}/jobs", s.JobsListHandler).Methods(http.MethodGet)
-	api.HandleFunc("/{account}/jobs", s.JobsCreateHandler).Methods(http.MethodPost)
-	api.HandleFunc("/{account}/jobs/{id}", s.JobsShowHandler).Methods(http.MethodGet)
-	api.HandleFunc("/{account}/jobs/{id}", s.JobsUpdateHandler).Methods(http.MethodPut)
-	api.HandleFunc("/{account}/jobs/{id}", s.JobsDeleteHandler).Methods(http.MethodDelete)
 
-	// TODO: remove this route one the jobs are running on a schedule
-	api.HandleFunc("/{account}/jobs/{id}", s.JobsRunHandler).Methods(http.MethodPatch)
+	api.HandleFunc("/{account}/jobs/{group}", s.JobsListHandler).Methods(http.MethodGet)
+	api.HandleFunc("/{account}/jobs/{group}", s.JobsCreateHandler).Methods(http.MethodPost)
+
+	api.HandleFunc("/{account}/jobs/{group}/{id}", s.JobsShowHandler).Methods(http.MethodGet)
+	api.HandleFunc("/{account}/jobs/{group}/{id}", s.JobsUpdateHandler).Methods(http.MethodPut)
+
+	api.HandleFunc("/{account}/jobs/{group}", s.JobsDeleteHandler).Methods(http.MethodDelete)
+	api.HandleFunc("/{account}/jobs/{group}/{id}", s.JobsDeleteHandler).Methods(http.MethodDelete)
+
+	api.HandleFunc("/{account}/jobs/{group}/{id}", s.JobsRunHandler).Methods(http.MethodPatch)
 }

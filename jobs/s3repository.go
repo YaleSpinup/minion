@@ -154,54 +154,108 @@ func WithPrefix(prefix string) S3RepositoryOption {
 // }
 
 // Create creates a job in the s3 jobs repository
-func (s *S3Repository) Create(ctx context.Context, account string, job *Job) (*Job, error) {
-	if job == nil {
+func (s *S3Repository) Create(ctx context.Context, account, group string, job *Job) (*Job, error) {
+	if account == "" || group == "" || job == nil {
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", errors.New("empty input"))
 	}
 
 	// generate a new random ID for the job
 	job.ID = NewID()
 
-	return s.Update(ctx, account, job.ID, job)
+	return s.Update(ctx, account, group, job.ID, job)
 }
 
 // Delete deletes a job in the s3 jobs repository
-func (s *S3Repository) Delete(ctx context.Context, account, id string) error {
-	if id == "" || account == "" {
+func (s *S3Repository) Delete(ctx context.Context, account, group, id string) error {
+	if account == "" || group == "" {
 		return apierror.New(apierror.ErrBadRequest, "invalid input", errors.New("empty input"))
 	}
 
-	log.Infof("deleting s3 job %+v", id)
+	log.Infof("deleting job from s3 %s/%s/%s", account, group, id)
 
 	key := s.Prefix + "/" + account
-	if !strings.HasSuffix(account, "/") && !strings.HasPrefix(id, "/") {
+	if !strings.HasSuffix(account, "/") && !strings.HasPrefix(group, "/") {
 		key = key + "/"
 	}
-	key = key + id
+	key = key + group
 
-	_, err := s.S3.DeleteObjectWithContext(ctx, &s3.DeleteObjectInput{
+	if id == "" {
+		return s.deletePath(ctx, key)
+	}
+
+	if !strings.HasSuffix(group, "/") && !strings.HasPrefix(id, "/") {
+		key = key + "/"
+	}
+
+	key = key + id
+	return s.deleteObject(ctx, key)
+}
+
+func (s *S3Repository) deletePath(ctx context.Context, prefix string) error {
+	log.Warnf("recursively deleting objects with prefix %s from bucket %s", prefix, s.Bucket)
+
+	jobs, err := s.listObjects(ctx, prefix)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("got list of objects with prefix %s: %+v", prefix, jobs)
+
+	// TODO: handle the case of deleting more than 1000 objects?
+	if len(jobs) >= 1000 {
+		return errors.New("cannot delete more than 1000 jobs at one time")
+	}
+
+	objs := make([]*s3.ObjectIdentifier, len(jobs))
+	for i, obj := range jobs {
+		objs[i] = &s3.ObjectIdentifier{
+			Key: aws.String(prefix + "/" + obj),
+		}
+	}
+
+	if _, err = s.S3.DeleteObjectsWithContext(ctx, &s3.DeleteObjectsInput{
+		Bucket: aws.String(s.Bucket),
+		Delete: &s3.Delete{
+			Objects: objs,
+		},
+	}); err != nil {
+		return ErrCode("failed to delete objects with prefix "+prefix, err)
+	}
+
+	return nil
+}
+
+func (s *S3Repository) deleteObject(ctx context.Context, key string) error {
+	log.Warnf("deleting objects with key %s from bucket %s", key, s.Bucket)
+
+	if _, err := s.S3.DeleteObjectWithContext(ctx, &s3.DeleteObjectInput{
 		Bucket: aws.String(s.Bucket),
 		Key:    aws.String(key),
-	})
-	if err != nil {
-		return ErrCode("failed to delete object "+id, err)
+	}); err != nil {
+		return ErrCode("failed to delete object "+key, err)
 	}
 
 	return nil
 }
 
 // Get gets a job from the s3 jobs repository
-func (s *S3Repository) Get(ctx context.Context, account, id string) (*Job, error) {
-	if id == "" {
+func (s *S3Repository) Get(ctx context.Context, account, group, id string) (*Job, error) {
+	if account == "" || group == "" || id == "" {
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", errors.New("empty input"))
 	}
 
-	log.Infof("getting job %s", id)
+	log.Infof("getting job %s/%s/%s", account, group, id)
 
 	key := s.Prefix + "/" + account
-	if !strings.HasSuffix(account, "/") && !strings.HasPrefix(id, "/") {
+	if !strings.HasSuffix(account, "/") && !strings.HasPrefix(group, "/") {
 		key = key + "/"
 	}
+	key = key + group
+
+	if !strings.HasSuffix(group, "/") && !strings.HasPrefix(id, "/") {
+		key = key + "/"
+	}
+
 	key = key + id
 
 	out, err := s.S3.GetObjectWithContext(ctx, &s3.GetObjectInput{
@@ -224,17 +278,38 @@ func (s *S3Repository) Get(ctx context.Context, account, id string) (*Job, error
 	return job, nil
 }
 
-// List lists the jobs in the s3 jobs repository
-func (s *S3Repository) List(ctx context.Context, account string) ([]string, error) {
-	log.Infof("listing jobs for account %s", account)
+// List lists the jobs in the s3 jobs repository.  If group is empty, all jobs are returned from the
+// account.  If some of those jobs are in a group, the group is prefixed with the job id in the response.
+func (s *S3Repository) List(ctx context.Context, account, group string) ([]string, error) {
+	if account == "" {
+		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", errors.New("empty input"))
+	}
 
-	prefix := s.Prefix + "/" + account
+	log.Infof("listing jobs for account '%s', group '%s'", account, group)
 
-	jobs := []string{}
+	prefix := account
+	if group != "" {
+		if !strings.HasSuffix(account, "/") && !strings.HasPrefix(group, "/") {
+			prefix = prefix + "/"
+		}
+		prefix = prefix + group
+	}
+
+	log.Infof("listing jobs %s", prefix)
+
+	prefix = s.Prefix + "/" + prefix
+
+	return s.listObjects(ctx, prefix)
+}
+
+func (s *S3Repository) listObjects(ctx context.Context, prefix string) ([]string, error) {
+	objs := []string{}
+
 	input := s3.ListObjectsV2Input{
 		Bucket: aws.String(s.Bucket),
 		Prefix: aws.String(prefix),
 	}
+
 	truncated := true
 	for truncated {
 		output, err := s.S3.ListObjectsV2WithContext(ctx, &input)
@@ -243,20 +318,20 @@ func (s *S3Repository) List(ctx context.Context, account string) ([]string, erro
 		}
 
 		for _, object := range output.Contents {
-			jId := strings.TrimPrefix(aws.StringValue(object.Key), prefix)
-			jobs = append(jobs, strings.TrimPrefix(jId, "/"))
+			id := strings.TrimPrefix(aws.StringValue(object.Key), prefix)
+			objs = append(objs, strings.TrimPrefix(id, "/"))
 		}
 
 		truncated = aws.BoolValue(output.IsTruncated)
 		input.ContinuationToken = output.NextContinuationToken
 	}
 
-	return jobs, nil
+	return objs, nil
 }
 
 // Update updates a job in the s3 jobs repository
-func (s *S3Repository) Update(ctx context.Context, account, id string, job *Job) (*Job, error) {
-	if job == nil || id == "" || job.ID != id {
+func (s *S3Repository) Update(ctx context.Context, account, group, id string, job *Job) (*Job, error) {
+	if account == "" || group == "" || id == "" || job == nil || job.ID != id {
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", errors.New("empty input"))
 	}
 
@@ -264,13 +339,21 @@ func (s *S3Repository) Update(ctx context.Context, account, id string, job *Job)
 	now := time.Now().UTC().Truncate(time.Second)
 	job.ModifiedAt = &now
 
-	log.Infof("updating job %+v", job)
+	log.Infof("updating job %s/%s/%s", account, group, id)
 
 	key := s.Prefix + "/" + account
-	if !strings.HasSuffix(account, "/") && !strings.HasPrefix(id, "/") {
+	if !strings.HasSuffix(account, "/") && !strings.HasPrefix(group, "/") {
 		key = key + "/"
 	}
+	key = key + group
+
+	if !strings.HasSuffix(group, "/") && !strings.HasPrefix(id, "/") {
+		key = key + "/"
+	}
+
 	key = key + id
+
+	log.Debugf("updating %s with job %+v", key, job)
 
 	j, err := json.MarshalIndent(job, "", "\t")
 	if err != nil {

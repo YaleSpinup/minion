@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/YaleSpinup/minion/jobs"
@@ -51,7 +52,7 @@ func (l *loader) run(ctx context.Context) error {
 
 	cache := make(map[string]*jobs.Job)
 	for name := range l.accounts {
-		jobs, err := l.jobsRepository.List(ctx, name)
+		jobs, err := l.jobsRepository.List(ctx, name, "")
 		if err != nil {
 			return err
 		}
@@ -59,12 +60,20 @@ func (l *loader) run(ctx context.Context) error {
 		log.Debugf("list of jobs: %+v", jobs)
 
 		for _, j := range jobs {
-			job, err := l.jobsRepository.Get(ctx, name, j)
+			var id, group string
+			if split := strings.SplitN(j, "/", 2); len(split) == 1 {
+				id = split[0]
+			} else {
+				group = split[0]
+				id = split[1]
+			}
+
+			job, err := l.jobsRepository.Get(ctx, name, group, id)
 			if err != nil {
 				log.Errorf("error getting details about job '%s': %s", j, err)
 			}
 
-			log.Debugf("got job details: %+v", job)
+			log.Debugf("caching job id %s with details: %+v", j, job)
 			l.jobsCache.Cache[j] = job
 			cache[j] = job
 		}
