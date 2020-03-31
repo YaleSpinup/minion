@@ -46,6 +46,11 @@
       "database": 2
     }
   },
+  "logProvider": {
+    "region": "us-east-1",
+    "akid": "keykeykeykeykeykeykey",
+    "secret": "secretsecretsecretsecretsecret"
+  },
   "listenAddress": ":8080",
   "token": "xxxxxx",
   "logLevel": "info",

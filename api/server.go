@@ -82,6 +82,11 @@ func NewServer(config common.Config) error {
 	id := namesgenerator.GetRandomName(0)
 	log.Infof("starting api server with id '%s'", id)
 
+	if config.Org == "" {
+		return errors.New("'org' cannot be empty in the configuration")
+	}
+	Org = config.Org
+
 	// TODO: replace this with something else, this is no good
 	jobsCache := &jobsCache{
 		Cache: make(map[string]*jobs.Job),
@@ -117,11 +122,6 @@ func NewServer(config common.Config) error {
 		id:        id,
 		jobsCache: jobsCache,
 	}
-
-	if config.Org == "" {
-		return errors.New("'org' cannot be empty in the configuration")
-	}
-	Org = config.Org
 
 	for name, c := range config.Accounts {
 		log.Debugf("configuring account %s with %+v", name, c)

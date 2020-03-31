@@ -278,6 +278,71 @@ jobs queue.  There is a potential race condition, since the jobs queue reads fro
 when executing jobs, so it may be missing if it was just created and hasn't been cached by the
 loader yet.
 
+## IAM permissions
+
+### S3 repository Example
+
+#### create `minion-dev-bucket` and create a user with the policy
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:DeleteObject",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::minion-dev-bucket/*",
+                "arn:aws:s3:::minion-dev-bucket"
+            ]
+        }
+    ]
+}
+```
+
+### Cloudwatchlogs Example
+
+#### policy example for cloudwatchlogs-creater-consumer
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": [
+                "logs:ListTagsLogGroup",
+                "logs:CreateLogStream",
+                "logs:TagLogGroup",
+                "logs:DescribeLogGroups",
+                "logs:DeleteLogGroup",
+                "logs:DescribeLogStreams",
+                "logs:GetLogEvents",
+                "logs:PutRetentionPolicy",
+                "logs:PutLogEvents"
+            ],
+            "Resource": [
+                "arn:aws:logs:*:*:log-group:localdev-*:log-stream:*",
+                "arn:aws:logs:us-east-1:012345678910:log-group:localdev-*"
+            ]
+        },
+        {
+            "Sid": "VisualEditor1",
+            "Effect": "Allow",
+            "Action": "logs:CreateLogGroup",
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+
 ## Author
 
 E Camden Fisher <camden.fisher@yale.edu>
