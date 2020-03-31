@@ -28,6 +28,30 @@ func newmockCWLClient(t *testing.T, err error) cloudwatchlogsiface.CloudWatchLog
 	}
 }
 
+func (m *mockCWLClient) ListTagsLogGroupWithContext(ctx context.Context, input *cloudwatchlogs.ListTagsLogGroupInput, opts ...request.Option) (*cloudwatchlogs.ListTagsLogGroupOutput, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+
+	out := cloudwatchlogs.ListTagsLogGroupOutput{}
+	if aws.StringValue(input.LogGroupName) == "test-1" {
+		out.Tags = map[string]*string{
+			"foo": aws.String("bar"),
+			"baz": aws.String("biz"),
+		}
+	}
+
+	return &out, nil
+}
+
+func (m *mockCWLClient) TagLogGroupWithContext(ctx context.Context, input *cloudwatchlogs.TagLogGroupInput, opts ...request.Option) (*cloudwatchlogs.TagLogGroupOutput, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+
+	return &cloudwatchlogs.TagLogGroupOutput{}, nil
+}
+
 func (m *mockCWLClient) GetLogEventsWithContext(ctx context.Context, input *cloudwatchlogs.GetLogEventsInput, opts ...request.Option) (*cloudwatchlogs.GetLogEventsOutput, error) {
 	if m.err != nil {
 		return nil, m.err
@@ -60,27 +84,51 @@ func (m *mockCWLClient) CreateLogStreamWithContext(ctx context.Context, input *c
 	return &cloudwatchlogs.CreateLogStreamOutput{}, nil
 }
 
+var testLogStreams = &cloudwatchlogs.DescribeLogStreamsOutput{
+	LogStreams: []*cloudwatchlogs.LogStream{
+		&cloudwatchlogs.LogStream{
+			LogStreamName:       aws.String("foo"),
+			UploadSequenceToken: aws.String("12345"),
+		},
+		&cloudwatchlogs.LogStream{
+			LogStreamName:       aws.String("bar"),
+			UploadSequenceToken: aws.String("67890"),
+		},
+		&cloudwatchlogs.LogStream{
+			LogStreamName:       aws.String("bad"),
+			UploadSequenceToken: aws.String("00000"),
+		},
+	},
+}
+
 func (m *mockCWLClient) DescribeLogStreamsWithContext(ctx context.Context, input *cloudwatchlogs.DescribeLogStreamsInput, opts ...request.Option) (*cloudwatchlogs.DescribeLogStreamsOutput, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
 
-	return &cloudwatchlogs.DescribeLogStreamsOutput{
-		LogStreams: []*cloudwatchlogs.LogStream{
-			&cloudwatchlogs.LogStream{
-				LogStreamName:       aws.String("foo"),
-				UploadSequenceToken: aws.String("12345"),
-			},
-			&cloudwatchlogs.LogStream{
-				LogStreamName:       aws.String("bar"),
-				UploadSequenceToken: aws.String("67890"),
-			},
-			&cloudwatchlogs.LogStream{
-				LogStreamName:       aws.String("bad"),
-				UploadSequenceToken: aws.String("00000"),
-			},
+	return testLogStreams, nil
+}
+
+var testLogGroups = &cloudwatchlogs.DescribeLogGroupsOutput{
+	LogGroups: []*cloudwatchlogs.LogGroup{
+		&cloudwatchlogs.LogGroup{
+			LogGroupName: aws.String("foo"),
 		},
-	}, nil
+		&cloudwatchlogs.LogGroup{
+			LogGroupName: aws.String("bar"),
+		},
+		&cloudwatchlogs.LogGroup{
+			LogGroupName: aws.String("bad"),
+		},
+	},
+}
+
+func (m *mockCWLClient) DescribeLogGroupsWithContext(context.Context, *cloudwatchlogs.DescribeLogGroupsInput, ...request.Option) (*cloudwatchlogs.DescribeLogGroupsOutput, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+
+	return testLogGroups, nil
 }
 
 func (m *mockCWLClient) PutLogEventsWithContext(ctx context.Context, input *cloudwatchlogs.PutLogEventsInput, opts ...request.Option) (*cloudwatchlogs.PutLogEventsOutput, error) {
@@ -102,6 +150,108 @@ func TestNewSession(t *testing.T) {
 	to := reflect.TypeOf(cw).String()
 	if to != "cloudwatchlogs.CloudWatchLogs" {
 		t.Errorf("expected type to be 'cloudwatchlogs.CloudWatchLogs', got %s", to)
+	}
+}
+
+func TestGetLogGroupTags(t *testing.T) {
+	client := CloudWatchLogs{Service: newmockCWLClient(t, nil)}
+	expected := map[string]*string{
+		"foo": aws.String("bar"),
+		"baz": aws.String("biz"),
+	}
+	out, err := client.GetLogGroupTags(context.TODO(), "test-1")
+	if err != nil {
+		t.Errorf("expected nil error, got %s", err)
+	}
+
+	if !reflect.DeepEqual(out, expected) {
+		t.Errorf("expected %+v, got %+v", expected, out)
+	}
+
+	_, err = client.GetLogGroupTags(context.TODO(), "")
+	if err == nil {
+		t.Error("expected error from empty group, got nil")
+	}
+
+	client = CloudWatchLogs{Service: newmockCWLClient(t, awserr.New(cloudwatchlogs.ErrCodeInvalidOperationException, "The operation is not valid on the specified resource.", nil))}
+	_, err = client.GetLogGroupTags(context.TODO(), "test-1")
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else {
+		if aerr, ok := errors.Cause(err).(apierror.Error); ok {
+			t.Logf("got apierror '%s'", aerr)
+		} else {
+			t.Errorf("expected error to be an apierror.Error, got %s", err)
+		}
+	}
+}
+
+func TestTagLogGroup(t *testing.T) {
+	client := CloudWatchLogs{Service: newmockCWLClient(t, nil)}
+	if err := client.TagLogGroup(context.TODO(), "test-1", map[string]*string{
+		"foo": aws.String("bar"),
+		"baz": aws.String("biz"),
+	}); err != nil {
+		t.Errorf("expected nil error, got %s", err)
+	}
+
+	if err := client.TagLogGroup(context.TODO(), "", map[string]*string{
+		"foo": aws.String("bar"),
+		"baz": aws.String("biz"),
+	}); err == nil {
+		t.Error("expected error for empty group, got nil")
+	}
+
+	if err := client.TagLogGroup(context.TODO(), "test-1", nil); err == nil {
+		t.Error("expected error for empty tags, got nil")
+	}
+
+	client = CloudWatchLogs{Service: newmockCWLClient(t, awserr.New(cloudwatchlogs.ErrCodeInvalidOperationException, "The operation is not valid on the specified resource.", nil))}
+	if err := client.TagLogGroup(context.TODO(), "test-1", map[string]*string{
+		"foo": aws.String("bar"),
+		"baz": aws.String("biz"),
+	}); err == nil {
+		t.Error("expected error, got nil")
+	} else {
+		if aerr, ok := errors.Cause(err).(apierror.Error); ok {
+			t.Logf("got apierror '%s'", aerr)
+		} else {
+			t.Errorf("expected error to be an apierror.Error, got %s", err)
+		}
+	}
+}
+
+func TestDescribeLogGroup(t *testing.T) {
+	client := CloudWatchLogs{Service: newmockCWLClient(t, nil)}
+
+	expected := &LogGroup{Name: aws.String("foo")}
+	out, err := client.DescribeLogGroup(context.TODO(), "foo")
+	if err != nil {
+		t.Errorf("expected nil error, got %s", err)
+	}
+
+	if !reflect.DeepEqual(out, expected) {
+		t.Errorf("expected %+v, got %+v", expected, out)
+	}
+
+	if _, err := client.DescribeLogGroup(context.TODO(), ""); err == nil {
+		t.Error("expected error for empty group, got nil")
+	}
+
+	if _, err := client.DescribeLogGroup(context.TODO(), "unknown"); err == nil {
+		t.Error("expected error for unkown group, got nil")
+	}
+
+	client = CloudWatchLogs{Service: newmockCWLClient(t, awserr.New(cloudwatchlogs.ErrCodeInvalidOperationException, "The operation is not valid on the specified resource.", nil))}
+	_, err = client.DescribeLogGroup(context.TODO(), "bar")
+	if err == nil {
+		t.Error("expected error, got nil")
+	} else {
+		if aerr, ok := errors.Cause(err).(apierror.Error); ok {
+			t.Logf("got apierror '%s'", aerr)
+		} else {
+			t.Errorf("expected error to be an apierror.Error, got %s", err)
+		}
 	}
 }
 

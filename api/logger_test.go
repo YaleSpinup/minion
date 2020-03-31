@@ -10,7 +10,6 @@ import (
 
 	"github.com/YaleSpinup/minion/cloudwatchlogs"
 	"github.com/YaleSpinup/minion/common"
-	"github.com/YaleSpinup/minion/jobs"
 )
 
 type mockCWLclient struct {
@@ -140,6 +139,22 @@ func (m *mockCWLclient) CreateLogStream(ctx context.Context, group, stream strin
 	return nil
 }
 
+func (m *mockCWLclient) TagLogGroup(ctx context.Context, group string, tags map[string]*string) error {
+	return nil
+}
+
+func (m *mockCWLclient) GetLogGroupTags(ctx context.Context, group string) (map[string]*string, error) {
+	return nil, nil
+}
+
+func (m *mockCWLclient) DescribeLogGroup(ctx context.Context, group string) (*cloudwatchlogs.LogGroup, error) {
+	return nil, nil
+}
+
+func (m *mockCWLclient) DeleteLogGroup(ctx context.Context, group string) error {
+	return nil
+}
+
 func newMockLogger(prefix string, timeout time.Duration, cwl *mockCWLclient) *logger {
 	return &logger{
 		client:  cwl,
@@ -173,11 +188,11 @@ func TestCreateLog(t *testing.T) {
 	logGroups = make(map[string]*logGroup)
 	l := newMockLogger("test", 5*time.Second, &mockCWLclient{t: t})
 
-	tags := []*jobs.Tag{
-		&jobs.Tag{Key: "soClose", Value: "noMatterHowFar"},
-		&jobs.Tag{Key: "couldntBe", Value: "muchMoreFromTheHeart"},
-		&jobs.Tag{Key: "forever", Value: "trustingWhoWeAre"},
-		&jobs.Tag{Key: "andNothing", Value: "elseMatters"},
+	tags := []*tag{
+		&tag{Key: "soClose", Value: "noMatterHowFar"},
+		&tag{Key: "couldntBe", Value: "muchMoreFromTheHeart"},
+		&tag{Key: "forever", Value: "trustingWhoWeAre"},
+		&tag{Key: "andNothing", Value: "elseMatters"},
 	}
 
 	expectedTags := make(map[string]*string)
@@ -194,7 +209,7 @@ func TestCreateLog(t *testing.T) {
 		tags: expectedTags,
 	}
 
-	if err := l.createLog(context.TODO(), "group", "test-stream", tags); err != nil {
+	if err := l.createLog(context.TODO(), "group", "test-stream", int64(90), tags); err != nil {
 		t.Errorf("expected nil error, got %s", err)
 	}
 
@@ -207,7 +222,7 @@ func TestCreateLog(t *testing.T) {
 	}
 
 	l = newMockLogger("test", 5*time.Second, &mockCWLclient{t: t, err: errors.New("boom!")})
-	if err := l.createLog(context.TODO(), "nonexistent-group", "test-stream", tags); err == nil {
+	if err := l.createLog(context.TODO(), "nonexistent-group", "test-stream", int64(90), tags); err == nil {
 		t.Error("expected error for missing log-group, got nil")
 	}
 }
