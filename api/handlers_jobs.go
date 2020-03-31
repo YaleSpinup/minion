@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/YaleSpinup/minion/apierror"
+	"github.com/YaleSpinup/minion/cloudwatchlogs"
 	"github.com/YaleSpinup/minion/jobs"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -28,7 +29,7 @@ func (s *server) JobsCreateHandler(w http.ResponseWriter, r *http.Request) {
 
 	input := struct {
 		Job  *jobs.Job
-		Tags []*jobs.Tag
+		Tags []*tag
 	}{}
 
 	err := json.NewDecoder(r.Body).Decode(&input)
@@ -47,20 +48,39 @@ func (s *server) JobsCreateHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Debugf("decoded request body into job input %+v", input)
 
+	// setup rollback function list and defer execution, note that we depend on the err variable defined above this
+	var rollBackTasks []func() error
+	defer func() {
+		if err != nil {
+			log.Errorf("recovering from error creating job: %s, executing %d rollback tasks", err, len(rollBackTasks))
+			rollBack(&rollBackTasks)
+		}
+	}()
+
 	job, err := s.jobsRepository.Create(r.Context(), account, group, input.Job)
 	if err != nil {
 		handleError(w, err)
 		return
 	}
 
-	if err := s.logger.createLog(r.Context(), group, job.ID, input.Tags); err != nil {
+	// append job cleanup to rollback tasks
+	rollBackTasks = append(rollBackTasks, func() error {
+		return func() error {
+			if err := s.jobsRepository.Delete(r.Context(), account, group, job.ID); err != nil {
+				return err
+			}
+			return nil
+		}()
+	})
+
+	if err := s.logger.createLog(r.Context(), group, job.ID, int64(90), input.Tags); err != nil {
 		handleError(w, apierror.New(apierror.ErrInternalError, "failed creating job audit log", err))
 		return
 	}
 
 	out := struct {
-		Job  *jobs.Job   `json:"job"`
-		Tags []*jobs.Tag `json:"tags"`
+		Job  *jobs.Job `json:"job"`
+		Tags []*tag    `json:"tags"`
 	}{
 		Job:  job,
 		Tags: input.Tags,
@@ -132,12 +152,20 @@ func (s *server) JobsShowHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	lg, tags, err := s.logger.describeLog(r.Context(), group)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+
 	out := struct {
-		Job  *jobs.Job   `json:"job"`
-		Tags []*jobs.Tag `json:"tags"`
+		Job  *jobs.Job                `json:"job"`
+		Tags []*tag                   `json:"tags"`
+		Log  *cloudwatchlogs.LogGroup `json:"log"`
 	}{
-		Job: job,
-		// Tags: TODO,
+		Job:  job,
+		Tags: tags,
+		Log:  lg,
 	}
 
 	j, err := json.Marshal(&out)
@@ -170,7 +198,7 @@ func (s *server) JobsUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	input := struct {
 		Job  *jobs.Job
-		Tags []*jobs.Tag
+		Tags []*tag
 	}{}
 
 	err := json.NewDecoder(r.Body).Decode(&input)
@@ -202,17 +230,25 @@ func (s *server) JobsUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.logger.createLog(r.Context(), group, job.ID, input.Tags); err != nil {
+	if err := s.logger.updateLog(r.Context(), group, int64(90), input.Tags); err != nil {
 		handleError(w, apierror.New(apierror.ErrInternalError, "failed updating job audit log", err))
 		return
 	}
 
+	lg, tags, err := s.logger.describeLog(r.Context(), group)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+
 	out := struct {
-		Job  *jobs.Job   `json:"job"`
-		Tags []*jobs.Tag `json:"tags"`
+		Job  *jobs.Job                `json:"job"`
+		Tags []*tag                   `json:"tags"`
+		Log  *cloudwatchlogs.LogGroup `json:"log"`
 	}{
 		Job:  job,
-		Tags: input.Tags,
+		Tags: tags,
+		Log:  lg,
 	}
 
 	j, err := json.Marshal(&out)
@@ -248,6 +284,8 @@ func (s *server) JobsDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err)
 		return
 	}
+
+	// TODO archive cloudwatchlog log stream
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)

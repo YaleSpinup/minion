@@ -3,6 +3,7 @@ package cloudwatchlogs
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/YaleSpinup/minion/apierror"
 	"github.com/aws/aws-sdk-go/aws"
@@ -24,6 +25,14 @@ type CloudWatchLogs struct {
 type Event struct {
 	Message   string
 	Timestamp int64
+}
+
+// LogGroup is a cloudwatchlogs log group
+type LogGroup struct {
+	Name      *string   `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
+	Retention *int64    `json:"retention"`
+	Bytes     *int64    `json:"bytes"`
 }
 
 // NewSession builds a new aws cloudwatchlogs session
@@ -51,6 +60,71 @@ func (c *CloudWatchLogs) GetLogEvents(ctx context.Context, input *cloudwatchlogs
 	return output, nil
 }
 
+// GetLogGroupTags returns the list of tags on a log group
+func (c *CloudWatchLogs) GetLogGroupTags(ctx context.Context, group string) (map[string]*string, error) {
+	if group == "" {
+		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
+	}
+
+	out, err := c.Service.ListTagsLogGroupWithContext(ctx, &cloudwatchlogs.ListTagsLogGroupInput{LogGroupName: aws.String(group)})
+	if err != nil {
+		msg := fmt.Sprintf("failed to list tags for log group (%s)", group)
+		return nil, ErrCode(msg, err)
+	}
+
+	return out.Tags, nil
+}
+
+// TagLogGroup sets tags for a log group
+func (c *CloudWatchLogs) TagLogGroup(ctx context.Context, group string, tags map[string]*string) error {
+	if group == "" || tags == nil {
+		return apierror.New(apierror.ErrBadRequest, "invalid input", nil)
+	}
+
+	if _, err := c.Service.TagLogGroupWithContext(ctx, &cloudwatchlogs.TagLogGroupInput{
+		LogGroupName: aws.String(group),
+		Tags:         tags,
+	}); err != nil {
+		msg := fmt.Sprintf("failed to set tags for log group (%s)", group)
+		return ErrCode(msg, err)
+	}
+
+	return nil
+}
+
+// DescribeLogGroup describes a cloudwatchlogs log group
+func (c *CloudWatchLogs) DescribeLogGroup(ctx context.Context, group string) (*LogGroup, error) {
+	if group == "" {
+		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
+	}
+
+	out, err := c.Service.DescribeLogGroupsWithContext(ctx, &cloudwatchlogs.DescribeLogGroupsInput{
+		LogGroupNamePrefix: aws.String(group),
+	})
+	if err != nil {
+		msg := fmt.Sprintf("failed to describe log group (%s)", group)
+		return nil, ErrCode(msg, err)
+	}
+
+	var logGroup *LogGroup
+	for _, lg := range out.LogGroups {
+		if aws.StringValue(lg.LogGroupName) == group {
+			logGroup = &LogGroup{
+				Name:      lg.LogGroupName,
+				CreatedAt: aws.MillisecondsTimeValue(lg.CreationTime),
+				Retention: lg.RetentionInDays,
+				Bytes:     lg.StoredBytes,
+			}
+		}
+	}
+
+	if logGroup == nil {
+		return nil, apierror.New(apierror.ErrBadRequest, "log group doesn't exist", nil)
+	}
+
+	return logGroup, nil
+}
+
 // CreateLogGroup creates a cloudwatchlogs log group
 func (c *CloudWatchLogs) CreateLogGroup(ctx context.Context, group string, tags map[string]*string) error {
 	if group == "" {
@@ -70,6 +144,22 @@ func (c *CloudWatchLogs) CreateLogGroup(ctx context.Context, group string, tags 
 				return ErrCode(msg, err)
 			}
 		}
+	}
+
+	return nil
+}
+
+// DeleteLogGroup deletes a cloudwatchlogs log group
+func (c *CloudWatchLogs) DeleteLogGroup(ctx context.Context, group string) error {
+	if group == "" {
+		return apierror.New(apierror.ErrBadRequest, "invalid input", nil)
+	}
+
+	if _, err := c.Service.DeleteLogGroupWithContext(ctx, &cloudwatchlogs.DeleteLogGroupInput{
+		LogGroupName: aws.String(group),
+	}); err != nil {
+		msg := fmt.Sprintf("failed to delete log group (%s)", group)
+		return ErrCode(msg, err)
 	}
 
 	return nil

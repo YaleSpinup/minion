@@ -101,6 +101,22 @@ func (m *mockExecCWLclient) CreateLogStream(ctx context.Context, group, stream s
 	return nil
 }
 
+func (m *mockExecCWLclient) TagLogGroup(ctx context.Context, group string, tags map[string]*string) error {
+	return nil
+}
+
+func (m *mockExecCWLclient) GetLogGroupTags(ctx context.Context, group string) (map[string]*string, error) {
+	return nil, nil
+}
+
+func (m *mockExecCWLclient) DescribeLogGroup(ctx context.Context, group string) (*cloudwatchlogs.LogGroup, error) {
+	return nil, nil
+}
+
+func (m *mockExecCWLclient) DeleteLogGroup(ctx context.Context, group string) error {
+	return nil
+}
+
 func newMockExecuter(t *testing.T, q *mockExecQueuer, l *logger) *executer {
 	q.t = t
 	q.finalized = false
