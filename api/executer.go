@@ -74,6 +74,8 @@ func (e *executer) loop(ctx context.Context, interval time.Duration) {
 
 func (e *executer) run(ctx context.Context, runner jobs.Runner, j *jobs.Job) {
 	logctx, closeLog := context.WithCancel(context.Background())
+	defer closeLog()
+
 	logGroup := j.Group
 	if e.logger.prefix != "" {
 		logGroup = e.logger.prefix + "-" + logGroup
@@ -85,7 +87,6 @@ func (e *executer) run(ctx context.Context, runner jobs.Runner, j *jobs.Job) {
 		if err := e.jobQueue.Finalize(j.ID); err != nil {
 			log.Errorf("%s: error finalizing job %s: %s", e.id, j.ID, err)
 		}
-		closeLog()
 	}()
 
 	for i := 1; i <= 3; i++ {
