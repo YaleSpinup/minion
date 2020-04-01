@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/YaleSpinup/minion/apierror"
+	"github.com/YaleSpinup/minion/cloudwatchlogs"
 	"github.com/YaleSpinup/minion/jobs"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -24,24 +25,65 @@ func (s *server) JobsCreateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Infof("creating job for account %s", account)
+	log.Infof("creating job for account %s, group %s", account, group)
 
-	input := jobs.Job{}
+	input := struct {
+		Job  *jobs.Job
+		Tags []*tag
+	}{}
+
 	err := json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
 		msg := fmt.Sprintf("cannot decode body into create job input: %s", err)
 		handleError(w, apierror.New(apierror.ErrBadRequest, msg, err))
 		return
 	}
-	input.Account = account
-	input.Group = group
+
+	if input.Job == nil {
+		handleError(w, apierror.New(apierror.ErrBadRequest, "job cannot be nil", nil))
+		return
+	}
+	input.Job.Account = account
+	input.Job.Group = group
 
 	log.Debugf("decoded request body into job input %+v", input)
 
-	out, err := s.jobsRepository.Create(r.Context(), account, group, &input)
+	// setup rollback function list and defer execution, note that we depend on the err variable defined above this
+	var rollBackTasks []func() error
+	defer func() {
+		if err != nil {
+			log.Errorf("recovering from error creating job: %s, executing %d rollback tasks", err, len(rollBackTasks))
+			rollBack(&rollBackTasks)
+		}
+	}()
+
+	job, err := s.jobsRepository.Create(r.Context(), account, group, input.Job)
 	if err != nil {
 		handleError(w, err)
 		return
+	}
+
+	// append job cleanup to rollback tasks
+	rollBackTasks = append(rollBackTasks, func() error {
+		return func() error {
+			if err := s.jobsRepository.Delete(r.Context(), account, group, job.ID); err != nil {
+				return err
+			}
+			return nil
+		}()
+	})
+
+	if err := s.logger.createLog(r.Context(), group, job.ID, int64(90), input.Tags); err != nil {
+		handleError(w, apierror.New(apierror.ErrInternalError, "failed creating job audit log", err))
+		return
+	}
+
+	out := struct {
+		Job  *jobs.Job `json:"job"`
+		Tags []*tag    `json:"tags"`
+	}{
+		Job:  job,
+		Tags: input.Tags,
 	}
 
 	j, err := json.Marshal(&out)
@@ -110,7 +152,23 @@ func (s *server) JobsShowHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	j, err := json.Marshal(&job)
+	lg, tags, err := s.logger.describeLog(r.Context(), group)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+
+	out := struct {
+		Job  *jobs.Job                `json:"job"`
+		Tags []*tag                   `json:"tags"`
+		Log  *cloudwatchlogs.LogGroup `json:"log"`
+	}{
+		Job:  job,
+		Tags: tags,
+		Log:  lg,
+	}
+
+	j, err := json.Marshal(&out)
 	if err != nil {
 		msg := fmt.Sprintf("cannot encode job into json: %s", err)
 		handleError(w, apierror.New(apierror.ErrBadRequest, msg, err))
@@ -136,24 +194,61 @@ func (s *server) JobsUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Infof("updating job '%s' for account %s from repository", id, account)
+	log.Infof("updating job '%s' for account %s, group %s", id, account, group)
 
-	input := jobs.Job{}
+	input := struct {
+		Job  *jobs.Job
+		Tags []*tag
+	}{}
+
 	err := json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
 		msg := fmt.Sprintf("cannot decode body into create job input: %s", err)
 		handleError(w, apierror.New(apierror.ErrBadRequest, msg, err))
 		return
 	}
-	input.ID = id
-	input.Account = account
+
+	if input.Job == nil {
+		handleError(w, apierror.New(apierror.ErrBadRequest, "job cannot be nil", nil))
+		return
+	}
+	input.Job.ID = id
+	input.Job.Account = account
+	input.Job.Group = group
 
 	log.Debugf("decoded request body into job input %+v", input)
 
-	out, err := s.jobsRepository.Update(r.Context(), account, group, id, &input)
+	// get the job to be sure it exists
+	if _, err := s.jobsRepository.Get(r.Context(), account, group, id); err != nil {
+		handleError(w, err)
+		return
+	}
+
+	job, err := s.jobsRepository.Update(r.Context(), account, group, id, input.Job)
 	if err != nil {
 		handleError(w, err)
 		return
+	}
+
+	if err := s.logger.updateLog(r.Context(), group, int64(90), input.Tags); err != nil {
+		handleError(w, apierror.New(apierror.ErrInternalError, "failed updating job audit log", err))
+		return
+	}
+
+	lg, tags, err := s.logger.describeLog(r.Context(), group)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+
+	out := struct {
+		Job  *jobs.Job                `json:"job"`
+		Tags []*tag                   `json:"tags"`
+		Log  *cloudwatchlogs.LogGroup `json:"log"`
+	}{
+		Job:  job,
+		Tags: tags,
+		Log:  lg,
 	}
 
 	j, err := json.Marshal(&out)
@@ -189,6 +284,8 @@ func (s *server) JobsDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err)
 		return
 	}
+
+	// TODO archive cloudwatchlog log stream
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)

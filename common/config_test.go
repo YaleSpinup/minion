@@ -48,6 +48,11 @@ var testConfig = []byte(
 				"port": 6379
 			}
 		},
+		"logProvider": {
+			"region": "us-east-1",
+			"akid": "somekeysomekeysomekey",
+			"secret": "somesecretsomesecretsomesecret"
+		},
 		"listenAddress": ":8000",
 		"token": "SEKRET",
 		"logLevel": "info",
@@ -97,6 +102,11 @@ func TestReadConfig(t *testing.T) {
 				"host":     "127.0.0.1",
 				"port":     float64(6379),
 			},
+		},
+		LogProvider: LogProvider{
+			Region: "us-east-1",
+			Akid:   "somekeysomekeysomekey",
+			Secret: "somesecretsomesecretsomesecret",
 		},
 		ListenAddress: ":8000",
 		Token:         "SEKRET",

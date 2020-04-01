@@ -49,6 +49,11 @@
       "database": "{{ .lock_db }}"
     }
   },
+  "logProvider": {
+    "region": "us-east-1",
+    "akid": "{{ .log_provider_akid }}",
+    "secret": "{{ .log_provider_secret }}"
+  },
   "listenAddress": ":8080",
   "token": "{{ .api_token }}",
   "logLevel": "{{ .log_level }}",
