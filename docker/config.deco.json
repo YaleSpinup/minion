@@ -11,7 +11,7 @@
     "dummyRunner": {
       "type": "dummy",
       "config": {
-        "template": "Hello, {{.Account}}!"
+        "template": "{{ .dummyrunner_tmpl }}"
       }
     },
     "instanceRunner": {
