@@ -10,7 +10,7 @@ if [ -n "$SSMPATH" ]; then
     echo "ERROR: aws-cli not found!"
     exit 1
   fi
-  aws -region us-east-1 ssm get-parameter --name "${SSMPATH}" --with-decryption --output text --query Parameter.Value | base64 -d > deco-config.json
+  aws --region us-east-1 ssm get-parameter --name "${SSMPATH}" --with-decryption --output text --query Parameter.Value | base64 -d > deco-config.json
   deco validate deco-config.json || exit 1
   deco run deco-config.json
   rm -f deco-config.json config.encrypted
