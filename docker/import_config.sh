@@ -15,6 +15,6 @@ if [ -n "$SSMPATH" ]; then
   deco run deco-config.json
   rm -f deco-config.json config.encrypted
 else
-  echo "ERROR: S3URL variable not set!"
+  echo "ERROR: SSMPATH variable not set!"
   exit 1
 fi
