@@ -74,7 +74,7 @@ func (l *loader) run(ctx context.Context) error {
 				continue
 			}
 
-			if job.Enabled {
+			if !job.Enabled {
 				log.Infof("job '%s' is disabled, not caching", id)
 				continue
 			}
