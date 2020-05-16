@@ -258,6 +258,8 @@ func (s *S3Repository) Get(ctx context.Context, account, group, id string) (*Job
 
 	key = key + id
 
+	log.Debugf("getting object (account: %s, group: %s, id: %s, key: '%s')", account, group, id, key)
+
 	out, err := s.S3.GetObjectWithContext(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.Bucket),
 		Key:    aws.String(key),
@@ -304,6 +306,10 @@ func (s *S3Repository) List(ctx context.Context, account, group string) ([]strin
 
 func (s *S3Repository) listObjects(ctx context.Context, prefix string) ([]string, error) {
 	objs := []string{}
+
+	if !strings.HasSuffix(prefix, "/") {
+		prefix = prefix + "/"
+	}
 
 	input := s3.ListObjectsV2Input{
 		Bucket: aws.String(s.Bucket),

@@ -29,7 +29,7 @@ type mockS3Client struct {
 }
 
 var testJobs = map[string]Job{
-	"a6d1b5a6-3a76-4d52-8856-b752afea563a": Job{
+	"a6d1b5a6-3a76-4d52-8856-b752afea563a": {
 		Account:     "metal",
 		ID:          "a6d1b5a6-3a76-4d52-8856-b752afea563a",
 		Description: "first studio album",
@@ -52,7 +52,7 @@ var testJobs = map[string]Job{
 		Group:              "metallica",
 		ScheduleExpression: "00 00 25 07 *",
 	},
-	"55ac40d3-a902-4c70-a5b7-3e4a8679e315": Job{
+	"55ac40d3-a902-4c70-a5b7-3e4a8679e315": {
 		Account:     "metal",
 		ID:          "55ac40d3-a902-4c70-a5b7-3e4a8679e315",
 		Description: "second studio album",
@@ -73,7 +73,7 @@ var testJobs = map[string]Job{
 		Group:              "metallica",
 		ScheduleExpression: "00 00 27 07 *",
 	},
-	"f2e4ad2f-b130-4d48-83a1-2d8e842e6eec": Job{
+	"f2e4ad2f-b130-4d48-83a1-2d8e842e6eec": {
 		Account:     "metal",
 		ID:          "f2e4ad2f-b130-4d48-83a1-2d8e842e6eec",
 		Description: "third studio album",
@@ -94,7 +94,7 @@ var testJobs = map[string]Job{
 		Group:              "metallica",
 		ScheduleExpression: "00 00 03 03 *",
 	},
-	"30b83d8a-163d-429a-86d8-beb34c266078": Job{
+	"30b83d8a-163d-429a-86d8-beb34c266078": {
 		Account:     "metal",
 		ID:          "30b83d8a-163d-429a-86d8-beb34c266078",
 		Description: "fourth studio album",
@@ -130,6 +130,8 @@ func (m *mockS3Client) PutObjectWithContext(ctx aws.Context, input *s3.PutObject
 		return nil, m.err
 	}
 
+	m.t.Logf("PutObjectWithContext: %+v", input)
+
 	return &s3.PutObjectOutput{}, nil
 }
 
@@ -137,6 +139,8 @@ func (m *mockS3Client) DeleteObjectWithContext(ctx aws.Context, input *s3.Delete
 	if m.err != nil {
 		return nil, m.err
 	}
+
+	m.t.Logf("DeleteObjectWithContext: %+v", input)
 
 	if strings.HasSuffix(aws.StringValue(input.Key), "/bad") {
 		return nil, awserr.New(s3.ErrCodeNoSuchKey, "missing key", nil)
@@ -149,6 +153,9 @@ func (m *mockS3Client) DeleteObjectsWithContext(ctx aws.Context, input *s3.Delet
 	if m.err != nil {
 		return nil, m.err
 	}
+
+	m.t.Logf("DeleteObjectsWithContext: %+v", input)
+
 	return &s3.DeleteObjectsOutput{}, nil
 }
 
@@ -156,6 +163,8 @@ func (m *mockS3Client) GetObjectWithContext(ctx aws.Context, input *s3.GetObject
 	if m.err != nil {
 		return nil, m.err
 	}
+
+	m.t.Logf("GetObjectWithContext: %+v", input)
 
 	for k, v := range testJobs {
 		if strings.HasSuffix(aws.StringValue(input.Key), k) {
@@ -175,10 +184,12 @@ func (m *mockS3Client) ListObjectsV2WithContext(ctx aws.Context, input *s3.ListO
 		return nil, m.err
 	}
 
-	if aws.StringValue(input.Prefix) == "/test/group" {
+	m.t.Logf("ListObjectsV2WithContext: %+v", input)
+
+	if aws.StringValue(input.Prefix) == "/test/group/" {
 		contents := []*s3.Object{}
 		for k := range testJobs {
-			key := aws.StringValue(input.Prefix) + "/" + k
+			key := aws.StringValue(input.Prefix) + k
 			obj := &s3.Object{
 				Key: aws.String(key),
 			}
@@ -222,13 +233,13 @@ func TestCreate(t *testing.T) {
 	}
 
 	tests := []createTest{
-		createTest{
+		{
 			job:     nil,
 			account: "test",
 			group:   "foo",
 			err:     errors.New("derp"),
 		},
-		createTest{
+		{
 			account: "test",
 			group:   "foo",
 			job: &Job{
@@ -322,35 +333,35 @@ func TestDelete(t *testing.T) {
 
 	testJobs := []deleteTest{
 		// unknown account, good group, no id
-		deleteTest{
+		{
 			account: "unknown",
 			id:      "",
 			group:   "group",
 			err:     errors.New("derp"),
 		},
 		// good account, unknown group, no id
-		deleteTest{
+		{
 			account: "test",
 			id:      "",
 			group:   "unknown",
 			err:     errors.New("derp"),
 		},
 		// good account, good group, no id
-		deleteTest{
+		{
 			account: "test",
 			id:      "",
 			group:   "group",
 			err:     nil,
 		},
 		// bad id
-		deleteTest{
+		{
 			account: "test",
 			id:      "bad",
 			group:   "group",
 			err:     errors.New("derp"),
 		},
 		// good id
-		deleteTest{
+		{
 			account: "test",
 			id:      "some-id",
 			group:   "group",
@@ -384,7 +395,7 @@ func TestUpdate(t *testing.T) {
 	}
 
 	tests := []updateTest{
-		updateTest{
+		{
 			job:   nil,
 			id:    "foo",
 			group: "foo",
