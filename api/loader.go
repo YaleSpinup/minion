@@ -71,6 +71,12 @@ func (l *loader) run(ctx context.Context) error {
 			job, err := l.jobsRepository.Get(ctx, name, group, id)
 			if err != nil {
 				log.Errorf("error getting details about job '%s': %s", j, err)
+				continue
+			}
+
+			if !job.Enabled {
+				log.Infof("job '%s' is disabled, not caching", id)
+				continue
 			}
 
 			log.Debugf("caching job id %s with details: %+v", j, job)
