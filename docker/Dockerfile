@@ -27,14 +27,10 @@ WORKDIR /app
 COPY --from=build-env /app/api.out /app/api
 RUN chmod 555 /app/api
 
-RUN apk add --no-cache bash ca-certificates wget python gettext && \
-    wget -nv "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" && \
-    unzip awscli-bundle.zip && \
-    ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws && \
-    /usr/local/bin/aws --version
+RUN apk add --no-cache bash ca-certificates
 
 # Install Deco
-ARG DECO_VERSION=0.3.1
+ARG DECO_VERSION=0.4.1
 ARG DECO_OS=linux
 ARG DECO_ARCH=amd64
 ADD https://github.com/YaleUniversity/deco/releases/download/v${DECO_VERSION}/deco-v${DECO_VERSION}-${DECO_OS}-${DECO_ARCH} /usr/local/bin/deco
