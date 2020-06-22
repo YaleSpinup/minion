@@ -176,7 +176,9 @@ func NewServer(config common.Config) error {
 	e.start(ctx, time.Second)
 
 	// start the job scheduler
-	d.start(ctx)
+	if err := d.start(ctx); err != nil {
+		return err
+	}
 
 	// TODO build up and start requeuer that
 	// * checks the backup queue for jobs older than XX minutes and requeues them (assuming the runner died)
@@ -188,7 +190,7 @@ func NewServer(config common.Config) error {
 		config.ListenAddress = ":8080"
 	}
 
-	handler := handlers.RecoveryHandler()(handlers.LoggingHandler(os.Stdout, TokenMiddleware(config.Token, publicURLs, s.router)))
+	handler := handlers.RecoveryHandler()(handlers.LoggingHandler(os.Stdout, TokenMiddleware([]byte(config.Token), publicURLs, s.router)))
 	srv := &http.Server{
 		Handler:      handler,
 		Addr:         config.ListenAddress,
@@ -232,32 +234,6 @@ func rollBack(t *[]func() error) {
 			log.Errorf("rollback task error: %s, continuing rollback", funcerr)
 		}
 	}
-}
-
-type stop struct {
-	error
-}
-
-// retry is stolen from https://upgear.io/blog/simple-golang-retry-function/
-func retry(attempts int, sleep time.Duration, f func() error) error {
-	if err := f(); err != nil {
-		if s, ok := err.(stop); ok {
-			// Return the original error for later checking
-			return s.error
-		}
-
-		if attempts--; attempts > 0 {
-			// Add some randomness to prevent creating a Thundering Herd
-			jitter := time.Duration(rand.Int63n(int64(sleep)))
-			sleep = sleep + jitter/2
-
-			time.Sleep(sleep)
-			return retry(attempts, 2*sleep, f)
-		}
-		return err
-	}
-
-	return nil
 }
 
 func newLocker(org string, lp common.LockProvider) (jobs.Locker, error) {
