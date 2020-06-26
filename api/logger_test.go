@@ -189,10 +189,10 @@ func TestCreateLog(t *testing.T) {
 	l := newMockLogger("test", 5*time.Second, &mockCWLclient{t: t})
 
 	tags := []*tag{
-		&tag{Key: "soClose", Value: "noMatterHowFar"},
-		&tag{Key: "couldntBe", Value: "muchMoreFromTheHeart"},
-		&tag{Key: "forever", Value: "trustingWhoWeAre"},
-		&tag{Key: "andNothing", Value: "elseMatters"},
+		{Key: "soClose", Value: "noMatterHowFar"},
+		{Key: "couldntBe", Value: "muchMoreFromTheHeart"},
+		{Key: "forever", Value: "trustingWhoWeAre"},
+		{Key: "andNothing", Value: "elseMatters"},
 	}
 
 	expectedTags := make(map[string]*string)
@@ -204,7 +204,7 @@ func TestCreateLog(t *testing.T) {
 		name:      "test-group",
 		retention: int64(90),
 		streams: map[string][]*cloudwatchlogs.Event{
-			"test-stream": []*cloudwatchlogs.Event{},
+			"test-stream": {},
 		},
 		tags: expectedTags,
 	}
@@ -233,7 +233,7 @@ func TestLog(t *testing.T) {
 		name:      "test-group",
 		retention: int64(365),
 		streams: map[string][]*cloudwatchlogs.Event{
-			"test-stream": []*cloudwatchlogs.Event{},
+			"test-stream": {},
 		},
 	}
 	logGroups = map[string]*logGroup{

@@ -12,23 +12,23 @@ import (
 
 var schedTestJobCache = jobsCache{
 	Cache: map[string]*jobs.Job{
-		"good-schedule-expression-1": &jobs.Job{
+		"good-schedule-expression-1": {
 			Description:        "enqueue me every minute",
 			ScheduleExpression: "* * * * *",
 		},
-		"good-schedule-expression-2": &jobs.Job{
+		"good-schedule-expression-2": {
 			Description:        "enqueue me hourly",
 			ScheduleExpression: "@hourly",
 		},
-		"good-schedule-expression-3": &jobs.Job{
+		"good-schedule-expression-3": {
 			Description:        "enqueue me every five",
 			ScheduleExpression: "*/5 * * * *",
 		},
-		"bad-schedule-expression": &jobs.Job{
+		"bad-schedule-expression": {
 			Description:        "im broke, dont queue me",
 			ScheduleExpression: "broke",
 		},
-		"disabled-job": &jobs.Job{
+		"disabled-job": {
 			Description:        "im diabled, dont queue me",
 			ScheduleExpression: "* * * * *",
 			Enabled:            false,

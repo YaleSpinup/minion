@@ -116,6 +116,4 @@ func (e *executer) run(ctx context.Context, runner jobs.Runner, j *jobs.Job) {
 			log.Infof("retrying job (%d) %s", i, j.ID)
 		}
 	}
-
-	return
 }
