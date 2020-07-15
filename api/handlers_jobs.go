@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/YaleSpinup/minion/apierror"
+	"github.com/YaleSpinup/apierror"
 	"github.com/YaleSpinup/minion/cloudwatchlogs"
 	"github.com/YaleSpinup/minion/jobs"
 	"github.com/gorilla/mux"
