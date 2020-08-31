@@ -81,10 +81,13 @@ func (l *logger) log(ctx context.Context, group, stream string) chan string {
 			case message := <-messageStream:
 				timestamp := time.Now().UnixNano() / int64(time.Millisecond)
 				log.Debugf("%d received message %s", timestamp, message)
-				messages = append(messages, &cloudwatchlogs.Event{
-					Message:   message,
-					Timestamp: timestamp,
-				})
+
+				if message != "" {
+					messages = append(messages, &cloudwatchlogs.Event{
+						Message:   message,
+						Timestamp: timestamp,
+					})
+				}
 			case <-time.After(timeout):
 				log.Warnf("timed out waiting for more log messages to write to %s/%s", group, stream)
 				return

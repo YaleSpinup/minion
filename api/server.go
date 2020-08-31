@@ -406,6 +406,14 @@ func newJobRunners(org string, runners map[string]common.JobRunner) (map[string]
 			jobRunners[name] = r
 
 			log.Infof("configured new instance runner %s", name)
+		case "service":
+			r, err := jobs.NewServiceRunner(c.Config)
+			if err != nil {
+				return nil, err
+			}
+			jobRunners[name] = r
+
+			log.Infof("configured new service runner %s", name)
 		default:
 			return nil, errors.New("failed to determine jobs runner type, or type not supported: " + c.Type)
 		}

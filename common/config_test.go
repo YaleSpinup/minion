@@ -10,7 +10,7 @@ var testConfig = []byte(
 	`{ 
 		"accounts": {
 		  "myaccount": {
-			"runners": ["dummyRunner", "instanceRunner"]
+			"runners": ["dummyRunner", "instanceRunner", "serviceRunner"]
 		  }
 		},
 		"jobsRepository": {
@@ -36,6 +36,13 @@ var testConfig = []byte(
 				"config": {
 					"endpoint": "http://127.0.0.1:8080/v1/ec2/power",
 					"token": "yyyyyyyy"
+				}
+			},
+			"serviceRunner": {
+				"type": "service",
+				"config": {
+					"endpoint": "http://127.0.0.1:8080/v1/ecs/scale",
+					"token": "zzzzzzzzzz"
 				}
 			}
 		},
@@ -65,7 +72,7 @@ func TestReadConfig(t *testing.T) {
 	expectedConfig := Config{
 		Accounts: map[string]Account{
 			"myaccount": Account{
-				Runners: []string{"dummyRunner", "instanceRunner"},
+				Runners: []string{"dummyRunner", "instanceRunner", "serviceRunner"},
 			},
 		},
 		JobsRepository: JobsRepository{
@@ -80,17 +87,24 @@ func TestReadConfig(t *testing.T) {
 			},
 		},
 		JobRunners: map[string]JobRunner{
-			"dummyRunner": JobRunner{
+			"dummyRunner": {
 				Type: "dummy",
 				Config: map[string]interface{}{
 					"template": "Hello, {{.Account}}!",
 				},
 			},
-			"instanceRunner": JobRunner{
+			"instanceRunner": {
 				Type: "instance",
 				Config: map[string]interface{}{
 					"endpoint": "http://127.0.0.1:8080/v1/ec2/power",
 					"token":    "yyyyyyyy",
+				},
+			},
+			"serviceRunner": {
+				Type: "service",
+				Config: map[string]interface{}{
+					"endpoint": "http://127.0.0.1:8080/v1/ecs/scale",
+					"token":    "zzzzzzzzzz",
 				},
 			},
 		},

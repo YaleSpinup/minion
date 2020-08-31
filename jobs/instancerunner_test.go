@@ -134,7 +134,7 @@ func TestInstanceRunnerRun(t *testing.T) {
 		t.Error("expected error for missing instance_id, got nil")
 	}
 
-	if _, err = instanceRunner.Run(context.TODO(), "myaccount", map[string][]string{"instance_id": []string{"foo", "bar"}}); err != nil {
+	if _, err = instanceRunner.Run(context.TODO(), "myaccount", map[string][]string{"instance_id": {"foo", "bar"}}); err != nil {
 		e := RunnerError{}
 		if errors.As(err, &e) {
 			if e.Code != ErrMissingDetails {
