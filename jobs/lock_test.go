@@ -15,10 +15,9 @@ func TestNewRedisLocker(t *testing.T) {
 		t.Errorf("expected type to be '*jobs.RedisLocker, got %s", to)
 	}
 
-	_, err = NewRedisLocker("foo", "127.0.0.1:6379", "", 0, "somebadduration")
-	if err == nil || err.Error() != "time: invalid duration somebadduration" {
+	if _, err = NewRedisLocker("foo", "127.0.0.1:6379", "", 0, "somebadduration"); err == nil {
 		t.Error("expected error got nil")
-	} else if err.Error() != "time: invalid duration somebadduration" {
-		t.Errorf("expected error 'time: invalid duration somebadduration', got %s", err)
+	} else if err.Error() != "time: invalid duration \"somebadduration\"" {
+		t.Errorf("expected error 'time: invalid duration \"somebadduration\"', got %s", err)
 	}
 }

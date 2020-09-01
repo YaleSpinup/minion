@@ -21,7 +21,6 @@ RUN /app/api.out -version
 
 # final stage
 FROM alpine
-MAINTAINER Camden Fisher <camden.fisher@yale.edu>
 
 WORKDIR /app
 COPY --from=build-env /app/api.out /app/api
