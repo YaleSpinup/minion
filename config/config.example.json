@@ -17,6 +17,15 @@
         "endpointTemplate": "http://127.0.0.1:8080/v1/ec2/{{.Account}}/instances/{{.InstanceID}}/power",
         "token": "yyyyyyyy"
       }
+    },
+    "serviceRunner": {
+      "type": "service",
+      "config": {
+        "endpointTemplate": "http://127.0.0.1:8080/v1/ecs/{{.Account}}/clusters/{{.Cluster}}/services/{{.Name}}",
+        "auth_header": "X-Auth-Token",
+        "token": "zzzzz",
+        "encrypt_token": true
+      }
     }
   },
   "jobsRepository": {
