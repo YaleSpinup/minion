@@ -148,7 +148,7 @@ func (r *ServiceRunner) Run(ctx context.Context, account string, parameters inte
 					return "", NewRunnerError(ErrExecFailure, "unable to hash token", err)
 				}
 
-				log.Debugf("token is encrypted, setting header to %s", string(e))
+				log.Debug("token is encrypted")
 
 				req.Header.Set(r.AuthHeader, string(e))
 			} else {
@@ -173,7 +173,8 @@ func (r *ServiceRunner) Run(ctx context.Context, account string, parameters inte
 			return "", NewRunnerError(ErrExecFailure, "unexpected http response", errors.New("unexpected response from serviceRunner api: "+res.Status))
 		}
 
-		return string(body), nil
+		msg := fmt.Sprintf("successfully set desired count for %s/%s to %d", s.Cluster, s.Name, s.desiredCount)
+		return msg, nil
 	default:
 		msg := fmt.Sprintf("unexpected service action '%s'", action)
 		return "", NewRunnerError(ErrMissingDetails, msg, nil)

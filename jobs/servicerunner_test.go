@@ -212,8 +212,8 @@ func TestServiceRunnerRun(t *testing.T) {
 		t.Errorf("expected nil error, got %s", err)
 	}
 
-	if out != "OK" {
-		t.Errorf("expected OK, got %s", out)
+	if out != "successfully set desired count for fooclu/foosvc to 10" {
+		t.Errorf("expected 'successfully set desired count for fooclu/foosvc to 10', got %s", out)
 	}
 }
 

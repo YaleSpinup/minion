@@ -78,7 +78,7 @@ An instance runner job executes an action on an instance.  Currently supported a
 
 ### service
 
-A service runner job executes an action on an service.  Currently supported action is `scale`.
+A service runner job executes an action on a container service.  Currently supported action is `scale`.
 
 #### example service job
 
