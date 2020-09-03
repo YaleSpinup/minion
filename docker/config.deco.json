@@ -25,7 +25,7 @@
       "type": "service",
       "config": {
         "endpointTemplate": "{{ .servicerunner_endpoint_tmpl }}",
-        "token": "{{ .instancerunner_token }}",
+        "token": "{{ .servicerunner_token }}",
         "encrypt_token": true
       }
     }
