@@ -76,6 +76,31 @@ An instance runner job executes an action on an instance.  Currently supported a
 }
 ```
 
+### service
+
+A service runner job executes an action on a container service.  Currently supported action is `scale`.
+
+#### example service job
+
+```json
+{
+    "description": "Scale service to zero",
+    "details": {
+        "service_action": "scale",
+        "service_cluster": "spindev-cluster-123",
+        "service_name": "spindev-svc-123",
+        "desired_count": "0",
+        "runner": "serviceRunner"
+    },
+    "id": "d7e88fea-5a43-4a08-a5e9-c9b19baebefd",
+    "modified_at": "2020-02-28T18:14:26Z",
+    "modified_by": "someone",
+    "name": "service-scale-job-test",
+    "schedule_expression": "00 18 * * *",
+    "enabled": true
+}
+```
+
 ## Create a Job
 
 POST `/v1/minion/{account}/jobs/space-xy`

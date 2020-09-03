@@ -128,12 +128,12 @@ func TestMetadataMarshalJSON(t *testing.T) {
 
 	modifiedAt, _ := time.Parse(time.RFC3339, "2015-11-21T04:19:01.123Z")
 	tests := []test{
-		test{
+		{
 			Job{},
 			[]byte(`{"account":"","description":"","details":null,"group":"","id":"","modified_at":"","modified_by":"","name":"","schedule_expression":"","enabled":false}`),
 			nil,
 		},
-		test{
+		{
 			Job{
 				Account:     "foocct",
 				Description: "Alien sightings",

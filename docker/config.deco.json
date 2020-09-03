@@ -20,6 +20,14 @@
         "endpointTemplate": "{{ .instancerunner_endpoint_tmpl }}",
         "token": "{{ .instancerunner_token }}"
       }
+    },
+    "serviceRunner": {
+      "type": "service",
+      "config": {
+        "endpointTemplate": "{{ .servicerunner_endpoint_tmpl }}",
+        "token": "{{ .servicerunner_token }}",
+        "encrypt_token": true
+      }
     }
   },
   "jobsRepository": {
