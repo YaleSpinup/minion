@@ -1,9 +1,13 @@
 name: "CodeQL Analysis"
 
 on:
-  release:
-    types: [created]
-            
+  push:
+    branches: [master]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [master]
+  schedule:
+    - cron: '0 22 * * 6'
 
 jobs:
   analyze:
