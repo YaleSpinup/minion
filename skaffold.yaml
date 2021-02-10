@@ -1,11 +1,23 @@
-apiVersion: skaffold/v1
+apiVersion: skaffold/v2beta10
 kind: Config
 build:
   artifacts:
   - image: hub.docker.com/yaleits/minion
-    docker:
-      dockerfile: k8s/Dockerfile
+    buildpacks:
+      builder: paketobuildpacks/builder:tiny
+  local:
+    useBuildkit: true
 deploy:
   kubectl:
     manifests:
       - k8s/k8s-*
+  helm:
+    releases:
+    - name: minion
+      chartPath: k8s/api
+      artifactOverrides:
+        image: hub.docker.com/yaleits/minion
+      setFiles:
+        apiconfig: config/config.json
+      valuesFiles:
+        - k8s/values.yaml

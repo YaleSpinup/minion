@@ -29,6 +29,16 @@ var publicURLs = map[string]string{
 	"/v1/minion/metrics": "public",
 }
 
+// apiVersion is the API version
+type apiVersion struct {
+	// The version of the API
+	Version string `json:"version"`
+	// The git hash of the API
+	GitHash string `json:"githash"`
+	// The build timestamp of the API
+	BuildStamp string `json:"buildstamp"`
+}
+
 // jobsCache is a map and a mux
 type jobsCache struct {
 	Cache map[string]*jobs.Job
@@ -44,7 +54,7 @@ type server struct {
 	jobRunners     map[string]jobs.Runner
 	logger         *logger
 	router         *mux.Router
-	version        common.Version
+	version        *apiVersion
 }
 
 // loader is responisble for loading the jobs from durable storage into a local cache.
@@ -101,7 +111,12 @@ func NewServer(config common.Config) error {
 		jobRunners: make(map[string]jobs.Runner),
 		logger:     newLogger(Org, config.LogProvider),
 		router:     mux.NewRouter(),
-		version:    config.Version,
+	}
+
+	s.version = &apiVersion{
+		Version:    config.Version.Version,
+		GitHash:    config.Version.GitHash,
+		BuildStamp: config.Version.BuildStamp,
 	}
 
 	l := loader{

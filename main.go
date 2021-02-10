@@ -1,9 +1,12 @@
 package main
 
 import (
-	"bufio"
+	"bytes"
+	"encoding/base64"
 	"flag"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 
@@ -18,9 +21,6 @@ const APINAME = "Minion"
 var (
 	// Version is the main version number
 	Version = "0.0.0"
-
-	// VersionPrerelease is a prerelease marker
-	VersionPrerelease = ""
 
 	// Buildstamp is the timestamp the binary was built, it should be set at buildtime with ldflags
 	Buildstamp = "No BuildStamp Provided"
@@ -42,24 +42,17 @@ func main() {
 	if err != nil {
 		log.Fatal("unable to get working directory")
 	}
-	log.Infof("Starting %s version %s%s (%s)", APINAME, Version, VersionPrerelease, cwd)
+	log.Infof("Starting %s version %s (%s)", APINAME, Version, cwd)
 
-	configFile, err := os.Open(*configFileName)
+	config, err := common.ReadConfig(configReader())
 	if err != nil {
-		log.Fatalln("Unable to open config file", err)
-	}
-
-	r := bufio.NewReader(configFile)
-	config, err := common.ReadConfig(r)
-	if err != nil {
-		log.Fatalf("Unable to read configuration from %s.  %+v", *configFileName, err)
+		log.Fatalf("Unable to read configuration from: %+v", err)
 	}
 
 	config.Version = common.Version{
-		Version:           Version,
-		VersionPrerelease: VersionPrerelease,
-		BuildStamp:        Buildstamp,
-		GitHash:           Githash,
+		Version:    Version,
+		BuildStamp: Buildstamp,
+		GitHash:    Githash,
 	}
 
 	// Set the loglevel, info if it's unset
@@ -85,7 +78,35 @@ func main() {
 	}
 }
 
+func configReader() io.Reader {
+	if configEnv := os.Getenv("API_CONFIG"); configEnv != "" {
+		log.Infof("reading configuration from API_CONFIG environment")
+
+		c, err := base64.StdEncoding.DecodeString(configEnv)
+		if err != nil {
+			log.Infof("API_CONFIG is not base64 encoded")
+			c = []byte(configEnv)
+		}
+
+		return bytes.NewReader(c)
+	}
+
+	log.Infof("reading configuration from %s", *configFileName)
+
+	configFile, err := os.Open(*configFileName)
+	if err != nil {
+		log.Fatalln("unable to open config file", err)
+	}
+
+	c, err := ioutil.ReadAll(configFile)
+	if err != nil {
+		log.Fatalln("unable to read config file", err)
+	}
+
+	return bytes.NewReader(c)
+}
+
 func vers() {
-	fmt.Printf("%s Version: %s%s\n", APINAME, Version, VersionPrerelease)
+	fmt.Printf("%s Version: %s\n", APINAME, Version)
 	os.Exit(0)
 }

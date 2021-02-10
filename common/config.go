@@ -58,10 +58,9 @@ type QueueProvider struct {
 
 // Version carries around the API version information
 type Version struct {
-	Version           string
-	VersionPrerelease string
-	BuildStamp        string
-	GitHash           string
+	Version    string
+	BuildStamp string
+	GitHash    string
 }
 
 // ReadConfig decodes the configuration from an io Reader
