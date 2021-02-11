@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/YaleSpinup/minion/jobs"
-	"github.com/robfig/cron"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -47,8 +46,6 @@ func (s *scheduler) run(ctx context.Context, now time.Time) {
 
 	log.Infof("%s running jobs scheduler %s with basis time %s", s.id, now.String(), basis.String())
 
-	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
-
 	s.jobsCache.Mux.Lock()
 	defer s.jobsCache.Mux.Unlock()
 
@@ -60,13 +57,12 @@ func (s *scheduler) run(ctx context.Context, now time.Time) {
 			continue
 		}
 
-		schedule, err := parser.Parse(job.ScheduleExpression)
+		next, err := job.NextRun(basis)
 		if err != nil {
-			log.Errorf("%s schedule_expression is not a valid cron expression: '%s': %s", id, job.ScheduleExpression, err)
+			log.Errorf("failed to get next run for job id '%s' with expression '%s': %s", id, job.ScheduleExpression, err)
 			continue
 		}
 
-		next := schedule.Next(basis)
 		log.Debugf("%s next execution is %s", id, next.String())
 
 		if next.Equal(now) {

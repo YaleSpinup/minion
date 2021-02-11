@@ -166,3 +166,105 @@ func TestMetadataMarshalJSON(t *testing.T) {
 		}
 	}
 }
+
+func TestJob_NextRun(t *testing.T) {
+	testTime, _ := time.Parse(time.RFC3339, "2015-11-21T04:19:01.123Z")
+	hourlyTime, _ := time.Parse(time.RFC3339, "2015-11-21T05:00:00.000Z")
+	allTheStars, _ := time.Parse(time.RFC3339, "2015-11-21T04:20:00.000Z")
+	everyFive, _ := time.Parse(time.RFC3339, "2015-11-21T04:20:00.000Z")
+	type fields struct {
+		Account            string
+		Description        string
+		Details            map[string]string
+		Enabled            bool
+		ID                 string
+		ModifiedBy         string
+		ModifiedAt         *time.Time
+		Name               string
+		Group              string
+		ScheduleExpression string
+	}
+	type args struct {
+		t time.Time
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    *time.Time
+		wantErr bool
+	}{
+		{
+			name:    "empty schedule",
+			wantErr: true,
+		},
+		{
+			name: "bad schedule words",
+			fields: fields{
+				ScheduleExpression: "@everybluemoon",
+			},
+			wantErr: true,
+		},
+		{
+			name: "bad schedule stars",
+			fields: fields{
+				ScheduleExpression: "* *",
+			},
+			wantErr: true,
+		},
+		{
+			name: "hourly",
+			fields: fields{
+				ScheduleExpression: "@hourly",
+			},
+			args: args{
+				t: testTime,
+			},
+			want: &hourlyTime,
+		},
+		{
+			name: "all the stars",
+			fields: fields{
+				ScheduleExpression: "* * * * *",
+			},
+			args: args{
+				t: testTime,
+			},
+			want: &allTheStars,
+		},
+		{
+			name: "every five minutes",
+			fields: fields{
+				ScheduleExpression: "*/5 * * * *",
+			},
+			args: args{
+				t: testTime,
+			},
+			want: &everyFive,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := &Job{
+				Account:            tt.fields.Account,
+				Description:        tt.fields.Description,
+				Details:            tt.fields.Details,
+				Enabled:            tt.fields.Enabled,
+				ID:                 tt.fields.ID,
+				ModifiedBy:         tt.fields.ModifiedBy,
+				ModifiedAt:         tt.fields.ModifiedAt,
+				Name:               tt.fields.Name,
+				Group:              tt.fields.Group,
+				ScheduleExpression: tt.fields.ScheduleExpression,
+			}
+			got, err := j.NextRun(tt.args.t)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Job.NextRun() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Job.NextRun() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
