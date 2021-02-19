@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/YaleSpinup/apierror"
-	"github.com/YaleSpinup/minion/cloudwatchlogs"
 	"github.com/YaleSpinup/minion/jobs"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -73,17 +73,21 @@ func (s *server) JobsCreateHandler(w http.ResponseWriter, r *http.Request) {
 		}()
 	})
 
+	next, err := job.NextRun(time.Now())
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+
 	if err := s.logger.createLog(r.Context(), group, job.ID, int64(90), input.Tags); err != nil {
 		handleError(w, apierror.New(apierror.ErrInternalError, "failed creating job audit log", err))
 		return
 	}
 
-	out := struct {
-		Job  *jobs.Job `json:"job"`
-		Tags []*tag    `json:"tags"`
-	}{
+	out := JobsResponse{
 		Job:  job,
 		Tags: input.Tags,
+		Next: next.UTC().Truncate(time.Second).Format(time.RFC3339),
 	}
 
 	j, err := json.Marshal(&out)
@@ -152,20 +156,23 @@ func (s *server) JobsShowHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	next, err := job.NextRun(time.Now())
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+
 	lg, tags, err := s.logger.describeLog(r.Context(), group)
 	if err != nil {
 		handleError(w, err)
 		return
 	}
 
-	out := struct {
-		Job  *jobs.Job                `json:"job"`
-		Tags []*tag                   `json:"tags"`
-		Log  *cloudwatchlogs.LogGroup `json:"log"`
-	}{
+	out := JobsResponse{
 		Job:  job,
 		Tags: tags,
 		Log:  lg,
+		Next: next.UTC().Truncate(time.Second).Format(time.RFC3339),
 	}
 
 	j, err := json.Marshal(&out)
@@ -230,6 +237,12 @@ func (s *server) JobsUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	next, err := job.NextRun(time.Now())
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+
 	if err := s.logger.updateLog(r.Context(), group, int64(90), input.Tags); err != nil {
 		handleError(w, apierror.New(apierror.ErrInternalError, "failed updating job audit log", err))
 		return
@@ -241,14 +254,11 @@ func (s *server) JobsUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out := struct {
-		Job  *jobs.Job                `json:"job"`
-		Tags []*tag                   `json:"tags"`
-		Log  *cloudwatchlogs.LogGroup `json:"log"`
-	}{
+	out := JobsResponse{
 		Job:  job,
 		Tags: tags,
 		Log:  lg,
+		Next: next.UTC().Truncate(time.Second).Format(time.RFC3339),
 	}
 
 	j, err := json.Marshal(&out)

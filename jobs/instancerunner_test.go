@@ -212,6 +212,9 @@ func TestInstanceRunnerRun(t *testing.T) {
 		"token":            "my-awesome-token",
 		"endpointTemplate": fmt.Sprintf("%s/{{.Account}}/{{.InstanceID}}", ts.URL),
 	})
+	if err != nil {
+		t.Errorf("expected nil error, got %s", err)
+	}
 
 	out, err = instanceRunnerTmpl.Run(context.TODO(), "myaccount", map[string]string{
 		"instance_id":     "i-123456",
@@ -229,8 +232,11 @@ func TestInstanceRunnerRun(t *testing.T) {
 		"token":            "my-awesome-token",
 		"endpointTemplate": fmt.Sprintf("%s/some-bad-url", ts.URL),
 	})
+	if err != nil {
+		t.Errorf("expected nil error, got %s", err)
+	}
 
-	out, err = instanceRunnerBadURL.Run(context.TODO(), "myaccount", map[string]string{
+	_, err = instanceRunnerBadURL.Run(context.TODO(), "myaccount", map[string]string{
 		"instance_id":     "i-123456",
 		"instance_action": "stop",
 	})
