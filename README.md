@@ -159,7 +159,8 @@ POST `/v1/minion/{account}/jobs/space-xy`
             "key": "baz",
             "value": "biz"
         }
-    ]
+    ],
+    "next": "2020-02-27T16:23:09Z"
 }
 ```
 
@@ -222,7 +223,8 @@ PUT `/v1/minion/{account}/jobs/space-xy/6bcfa79f-615e-470d-97c1-687f3357497d`
             "key": "baz",
             "value": "biz"
         }
-    ]
+    ],
+    "next": "2020-02-27T16:23:09Z"
 }
 ```
 
@@ -282,7 +284,8 @@ GET `/v1/minion/{account}/jobs/space-xy/6bcfa79f-615e-470d-97c1-687f3357497d`
             "key": "baz",
             "value": "biz"
         }
-    ]
+    ],
+    "next": "2020-02-27T16:23:09Z"
 }
 ```
 

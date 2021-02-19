@@ -39,7 +39,7 @@ func NewID() string {
 	return id
 }
 
-// UnmarshalJSON is a custom JSON unmarshaller for metadata
+// UnmarshalJSON is a custom JSON unmarshaller for a job
 func (m *Job) UnmarshalJSON(j []byte) error {
 	var rawStrings map[string]interface{}
 
@@ -203,4 +203,18 @@ func (m *Job) MarshalBinary() ([]byte, error) {
 
 func (m *Job) UnmarshalBinary(data []byte) error {
 	return m.UnmarshalJSON(data)
+}
+
+// NextRun returns the next invocation of the schedule expression
+func (j *Job) NextRun(t time.Time) (*time.Time, error) {
+	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
+
+	c, err := parser.Parse(j.ScheduleExpression)
+	if err != nil {
+		return nil, err
+	}
+
+	next := c.Next(t)
+
+	return &next, nil
 }

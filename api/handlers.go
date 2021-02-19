@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/YaleSpinup/apierror"
@@ -25,16 +24,7 @@ func (s *server) VersionHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 
-	data, err := json.Marshal(struct {
-		Version    string `json:"version"`
-		GitHash    string `json:"githash"`
-		BuildStamp string `json:"buildstamp"`
-	}{
-		Version:    fmt.Sprintf("%s%s", s.version.Version, s.version.VersionPrerelease),
-		GitHash:    s.version.GitHash,
-		BuildStamp: s.version.BuildStamp,
-	})
-
+	data, err := json.Marshal(s.version)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte{})

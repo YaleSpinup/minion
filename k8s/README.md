@@ -1,6 +1,6 @@
 # k8s development Readme
 
-The application ships with a basic k8s config (currently only configured for development) in the `k8s/` directory.  There you will find a `Dockerfile` and yaml configuration to deploy the *minion* pod, service and ingress.  There is also an example configuration yaml (`k8s-config.yaml`) which needs to be populated by you before skaffold can deploy the minion.
+The application ships with a basic k8s config in the `k8s/` directory.  There, you will find an `api` helm chart and a `values.yaml` to deploy the pod, service and ingress.  By default, `skaffold` will use the [paketo buildpacks](https://paketo.io/) and will reference the configuration in `config/config.json`.
 
 ## install docker desktop and enable kubernetes
 
@@ -14,28 +14,19 @@ The application ships with a basic k8s config (currently only configured for dev
 
 ## setup ingress controller (do this once on your cluster)
 
+https://kubernetes.github.io/ingress-nginx/deploy/
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v0.41.2/deploy/static/provider/cloud/deploy.yaml
 ```
-kubectl apply -f https://gist.githubusercontent.com/fishnix/a94dd54ec72523024f5a0b99ae7c6e49/raw/013f86ab7af23eb014f25ba18e5d24c4fd329689/traefik-rbac.yaml
-kubectl apply -f https://gist.githubusercontent.com/fishnix/a94dd54ec72523024f5a0b99ae7c6e49/raw/ff7fd88c504094e18c470b967f707ad6cd80838e/traefik-ds.yaml
-```
-
-## create k8s secret config
-
-* modify the local configuration file in `config/config.json`
-
-* copy example secret yaml `cp k8s/example-k8s-config.yaml k8s/k8s-config.yaml`
-
-* base64 encode the configuration `cat config/config.json | base64 -w0`
-
-* copy output of `config.json` secret into `k8s-config.yaml`
 
 ## develop
 
 * run `skaffold dev` in the root of the project
 
-* update your `hosts` file to point spindev.internal.yale.yale.edu to localhost
+* update your `hosts` file to point spindev.internal.yale.edu to localhost
 
-* use the endpoint `http://<<spindev.internal.yale.edu>>/v1//minion`
+* use the endpoint `http://<<spindev.internal.yale.edu>>/v1/<apiname>`
 
 Saving your code should rebuild and redeploy your project automatically
 
