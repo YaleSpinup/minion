@@ -514,11 +514,21 @@ func TestGet(t *testing.T) {
 		}
 	}
 
-	_, err := s.Get(context.TODO(), "test", "foo", "some-other-job")
-	if err == nil {
+	if _, err := s.Get(context.TODO(), "test", "foo", "some-other-job"); err == nil {
 		t.Error("expected error for missing key, got nil")
 	}
 
+	if _, err := s.Get(context.TODO(), "", "foo", "some-other-job"); err == nil {
+		t.Error("expected error for empty account, got nil")
+	}
+
+	if _, err := s.Get(context.TODO(), "test", "", "some-other-job"); err == nil {
+		t.Error("expected error for empty group, got nil")
+	}
+
+	if _, err := s.Get(context.TODO(), "test", "foo", ""); err == nil {
+		t.Error("expected error for id account, got nil")
+	}
 }
 
 func TestList(t *testing.T) {

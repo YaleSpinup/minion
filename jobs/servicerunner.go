@@ -86,7 +86,7 @@ func (r *ServiceRunner) Run(ctx context.Context, account string, parameters inte
 		return "", errors.New("account is required")
 	}
 
-	log.Infof("running service runner %+v in account %s,  with parameters %+v", r, account, parameters)
+	log.Debugf("initializing service runner %+v in account %s,  with parameters %+v", r, account, parameters)
 
 	params, ok := parameters.(map[string]string)
 	if !ok {
@@ -130,7 +130,7 @@ func (r *ServiceRunner) Run(ctx context.Context, account string, parameters inte
 			return "", err
 		}
 
-		log.Debugf("scaling %s/%s with input %s", s.Cluster, s.Name, string(j))
+		log.Debugf("service runner scaling %s/%s with input %s", s.Cluster, s.Name, string(j))
 
 		client := &http.Client{
 			Timeout: time.Second * 30,
@@ -155,6 +155,8 @@ func (r *ServiceRunner) Run(ctx context.Context, account string, parameters inte
 				req.Header.Set(r.AuthHeader, r.Token)
 			}
 		}
+
+		log.Infof("service runner scaling  %s/%s to %d", s.Cluster, s.Name, s.desiredCount)
 
 		res, err := client.Do(req)
 		if err != nil {
