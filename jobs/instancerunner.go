@@ -63,7 +63,7 @@ func (r *InstanceRunner) Run(ctx context.Context, account string, parameters int
 		return "", errors.New("account is required")
 	}
 
-	log.Infof("running instance runner %+v in account %s,  with parameters %+v", r, account, parameters)
+	log.Debugf("initializing instance runner %+v in account %s,  with parameters %+v", r, account, parameters)
 
 	params, ok := parameters.(map[string]string)
 	if !ok {
@@ -121,6 +121,8 @@ func (r *InstanceRunner) Run(ctx context.Context, account string, parameters int
 		if r.Token != "" {
 			req.Header.Set("Auth-Token", r.Token)
 		}
+
+		log.Infof("instance runner executing '%s' on %s", action, instanceID)
 
 		res, err := client.Do(req)
 		if err != nil {

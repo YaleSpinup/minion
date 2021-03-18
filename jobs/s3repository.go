@@ -238,7 +238,7 @@ func (s *S3Repository) deleteObject(ctx context.Context, key string) error {
 	return nil
 }
 
-// Get gets a job from the s3 jobs repository
+// Get gets a job from the s3 jobs repository - jobs are in the path /<account>/<group>/<job id>
 func (s *S3Repository) Get(ctx context.Context, account, group, id string) (*Job, error) {
 	if account == "" || group == "" || id == "" {
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", errors.New("empty input"))

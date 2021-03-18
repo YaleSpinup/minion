@@ -71,7 +71,9 @@ func (q *RedisQueuer) Fetch(queued *QueuedJob) error {
 	// the job is supposed to execute too far in the future, so reschedule and return an error.
 	if int64(val.Score)-currentTime() > q.Window {
 		log.Debugf("job '%s' is not within the window, rescheduling", id)
-		q.enqueue(q.Name, queued.Score, queued.ID)
+		if err := q.enqueue(q.Name, queued.Score, queued.ID); err != nil {
+			log.Errorf("failed to re-enqueue job: %s", err)
+		}
 		return fmt.Errorf("rescheduled job, not within window")
 	}
 
@@ -106,7 +108,7 @@ func (q *RedisQueuer) Finalize(id string) error {
 
 // Close the redis client connection
 func (q *RedisQueuer) Close() error {
-	return q.Close()
+	return q.client.Close()
 }
 
 func (q *RedisQueuer) dequeue(setName string, id string) error {
