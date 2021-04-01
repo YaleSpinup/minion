@@ -119,7 +119,7 @@ func (r *InstanceRunner) Run(ctx context.Context, account string, parameters int
 		}
 
 		if r.Token != "" {
-			req.Header.Set("Auth-Token", r.Token)
+			req.Header.Set("X-Auth-Token", r.Token)
 		}
 
 		log.Infof("instance runner executing '%s' on %s", action, instanceID)

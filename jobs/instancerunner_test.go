@@ -83,7 +83,7 @@ func TestInstanceRunnerRun(t *testing.T) {
 			return
 		}
 
-		tok := r.Header.Get("Auth-Token")
+		tok := r.Header.Get("X-Auth-Token")
 		if tok != "my-awesome-token" {
 			w.WriteHeader(http.StatusForbidden)
 			fmt.Fprint(w, "bad token")
