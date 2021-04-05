@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	report "github.com/YaleSpinup/eventreporter"
 	"github.com/YaleSpinup/minion/jobs"
 	log "github.com/sirupsen/logrus"
 )
@@ -32,38 +33,40 @@ func (e *executer) loop(ctx context.Context, interval time.Duration) {
 				continue
 			}
 
-			if q.ID != "" {
-				log.Debugf("%s: about to execute queued job %+v", e.id, q)
-
-				e.jobsCache.Mux.Lock()
-				job, ok := e.jobsCache.Cache[q.ID]
-				e.jobsCache.Mux.Unlock()
-
-				if !ok {
-					log.Warnf("%s: job %s not found in the job cache", e.id, q.ID)
-					continue
-				}
-
-				// if the job from the repository has a runner configured
-				runner, ok := job.Details["runner"]
-				if !ok {
-					log.Warnf("%s: runner not found in the job details for %s", e.id, job.ID)
-					continue
-				}
-
-				log.Debugf("%s: found requested runner '%s' in job details", e.id, runner)
-
-				// look for that runner in the list of available runners
-				jr, ok := e.jobRunners[runner]
-				if !ok {
-					log.Warnf("%s: jobRunner not defined for requested runner '%s'", e.id, runner)
-					continue
-				}
-
-				log.Debugf("%s: jobRunner defined for requested runner '%s': %+v", e.id, runner, jr)
-
-				go e.run(ctx, jr, job)
+			if q.ID == "" {
+				continue
 			}
+
+			log.Debugf("%s: about to execute queued job %+v", e.id, q)
+
+			e.jobsCache.Mux.Lock()
+			job, ok := e.jobsCache.Cache[q.ID]
+			e.jobsCache.Mux.Unlock()
+
+			if !ok {
+				log.Warnf("%s: job %s not found in the job cache", e.id, q.ID)
+				continue
+			}
+
+			// if the job from the repository has a runner configured
+			runner, ok := job.Details["runner"]
+			if !ok {
+				log.Warnf("%s: runner not found in the job details for %s", e.id, job.ID)
+				continue
+			}
+
+			log.Debugf("%s: found requested runner '%s' in job details", e.id, runner)
+
+			// look for that runner in the list of available runners
+			jr, ok := e.jobRunners[runner]
+			if !ok {
+				log.Warnf("%s: jobRunner not defined for requested runner '%s'", e.id, runner)
+				continue
+			}
+
+			log.Debugf("%s: jobRunner defined for requested runner '%s': %+v", e.id, runner, jr)
+
+			go e.run(ctx, jr, job)
 		case <-ctx.Done():
 			log.Debugf("%s: shutting down executer ticker", e.id)
 			ticker.Stop()
@@ -103,6 +106,7 @@ func (e *executer) run(ctx context.Context, runner jobs.Runner, j *jobs.Job) {
 		msg := fmt.Sprintf("failed running job (%d tries) %s: %s", i, j.ID, err)
 		log.Error(msg)
 		logStream <- msg
+		reportEvent(msg, report.ERROR)
 
 		timer := time.NewTimer(5 * time.Second)
 		select {

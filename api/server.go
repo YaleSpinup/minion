@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"os"
@@ -17,6 +18,8 @@ import (
 	"github.com/gorilla/mux"
 
 	log "github.com/sirupsen/logrus"
+
+	report "github.com/YaleSpinup/eventreporter"
 )
 
 func init() {
@@ -84,8 +87,12 @@ type executer struct {
 	logger     *logger
 }
 
-// Org will carry throughout the api and get tagged on resources
-var Org string
+var (
+	// Org will carry throughout the api and get tagged on resources
+	Org string
+
+	EventReporters []report.Reporter
+)
 
 // NewServer creates a new server and starts it
 func NewServer(config common.Config) error {
@@ -101,6 +108,12 @@ func NewServer(config common.Config) error {
 	jobsCache := &jobsCache{
 		Cache: make(map[string]*jobs.Job),
 	}
+
+	if err := configureEventReporters(config.EventReporters); err != nil {
+		return err
+	}
+
+	reportEvent(fmt.Sprintf("Starting minion (id: %s, org: %s)", id, Org), report.INFO)
 
 	// setup server context with cancellation
 	ctx, cancel := context.WithCancel(context.Background())
@@ -435,4 +448,33 @@ func newJobRunners(org string, runners map[string]common.JobRunner) (map[string]
 	}
 
 	return jobRunners, nil
+}
+
+// configureEventReporters configures the global event reporters
+func configureEventReporters(configs map[string]common.EventReporterConfig) error {
+	for name, config := range configs {
+		r, err := report.New(name, config)
+		if err != nil {
+			return err
+		}
+
+		EventReporters = append(EventReporters, r)
+	}
+
+	return nil
+}
+
+// reportEvent loops over all of the configured event reporters and sends the event to those reporters
+func reportEvent(msg string, level report.Level) {
+	e := report.Event{
+		Message: msg,
+		Level:   level,
+	}
+
+	for _, r := range EventReporters {
+		err := r.Report(e)
+		if err != nil {
+			log.Errorf("Failed to report event (%s) %s", msg, err.Error())
+		}
+	}
 }

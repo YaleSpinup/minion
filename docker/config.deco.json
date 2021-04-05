@@ -62,6 +62,14 @@
     "akid": "{{ .log_provider_akid }}",
     "secret": "{{ .log_provider_secret }}"
   },
+  "eventReporters": {
+    "slack": {
+      "endpoint": "{{ .api_slack_endpoint }}",
+      "channel": "{{ .api_slack_channel }}",
+      "icon": ":ugh_minion:",
+      "username": "Minion"
+    }
+  },
   "listenAddress": ":8080",
   "token": "{{ .api_token }}",
   "logLevel": "{{ .log_level }}",
