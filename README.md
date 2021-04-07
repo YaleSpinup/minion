@@ -75,6 +75,28 @@ An instance runner job executes an action on an instance.  Currently supported a
     "enabled": true
 }
 ```
+### database
+A Database runner job executes an action against a database instance. Currently supported actions are `stop` and `start`.
+
+#### example database job
+
+```json
+{
+    "job": {
+        "description": "Stop database",
+        "details": {
+            "runner": "databaseRunner",
+            "database_action": "stop",
+            "instance_id": "spintst-db000b36"
+        },
+        "group": "test_rds",
+        "modified_by": "someone",
+        "name": "stop-tst",
+        "schedule_expression": "* * * * *",
+        "enabled": true
+    }
+}
+```
 
 ### service
 
