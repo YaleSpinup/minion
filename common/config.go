@@ -11,6 +11,7 @@ import (
 // Config is representation of the configuration data
 type Config struct {
 	Accounts       map[string]Account
+	EventReporters map[string]EventReporterConfig
 	JobsRepository JobsRepository
 	JobRunners     map[string]JobRunner
 	ListenAddress  string
@@ -22,6 +23,8 @@ type Config struct {
 	Version        Version
 	Org            string
 }
+
+type EventReporterConfig map[string]string
 
 // Account is the configuration for an individual account
 type Account struct {
