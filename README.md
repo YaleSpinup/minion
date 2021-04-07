@@ -40,7 +40,7 @@ A dummy runner job just attempts to execute a template with the given account na
 {
     "description": "Do some dumb thing to my server",
     "details": {
-        "runner": "dummyRunner",
+        "runner": "dummyRunner"
     },
     "group": "space-xy",
     "id": "6bcfa79f-615e-470d-97c1-687f3357497d",
@@ -112,7 +112,7 @@ POST `/v1/minion/{account}/jobs/space-xy`
     "job": {
         "description": "Do some dumb thing to my server",
         "details": {
-            "runner": "dummyRunner",
+            "runner": "dummyRunner"
         },
         "group": "space-xy",
         "modified_by": "someone",
@@ -140,7 +140,7 @@ POST `/v1/minion/{account}/jobs/space-xy`
     "job": {
         "description": "Do some dumb thing to my server",
         "details": {
-            "runner": "dummyRunner",
+            "runner": "dummyRunner"
         },
         "group": "space-xy",
         "id": "6bcfa79f-615e-470d-97c1-687f3357497d",
@@ -175,7 +175,7 @@ PUT `/v1/minion/{account}/jobs/space-xy/6bcfa79f-615e-470d-97c1-687f3357497d`
     "job": {
         "description": "Do some dumb thing to my server",
         "details": {
-            "runner": "dummyRunner",
+            "runner": "dummyRunner"
         },
         "group": "space-xy",
         "id": "6bcfa79f-615e-470d-97c1-687f3357497d",
@@ -204,7 +204,7 @@ PUT `/v1/minion/{account}/jobs/space-xy/6bcfa79f-615e-470d-97c1-687f3357497d`
     "job": {
         "description": "Do some dumb thing to my server",
         "details": {
-            "runner": "dummyRunner",
+            "runner": "dummyRunner"
         },
         "group": "space-xy",
         "id": "6bcfa79f-615e-470d-97c1-687f3357497d",
@@ -265,7 +265,7 @@ GET `/v1/minion/{account}/jobs/space-xy/6bcfa79f-615e-470d-97c1-687f3357497d`
     "job": {
         "description": "Do some dumb thing to my server",
         "details": {
-            "runner": "dummyRunner",
+            "runner": "dummyRunner"
         },
         "group": "space-xy",
         "id": "6bcfa79f-615e-470d-97c1-687f3357497d",
