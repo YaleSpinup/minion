@@ -57,7 +57,7 @@ type server struct {
 	version        *apiVersion
 }
 
-// loader is responisble for loading the jobs from durable storage into a local cache.
+// loader is responsible for loading the jobs from durable storage into a local cache.
 type loader struct {
 	accounts        map[string]common.Account
 	id              string
@@ -429,6 +429,14 @@ func newJobRunners(org string, runners map[string]common.JobRunner) (map[string]
 			jobRunners[name] = r
 
 			log.Infof("configured new service runner %s", name)
+		case "database":
+			r, err := jobs.NewDatabaseRunner(c.Config)
+			if err != nil {
+				return nil, err
+			}
+			jobRunners[name] = r
+
+			log.Infof("configured new database runner %s", name)
 		default:
 			return nil, errors.New("failed to determine jobs runner type, or type not supported: " + c.Type)
 		}
