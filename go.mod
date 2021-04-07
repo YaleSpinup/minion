@@ -9,6 +9,7 @@ require (
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/handlers v1.5.0
 	github.com/gorilla/mux v1.8.0
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/onsi/ginkgo v1.14.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.7.1
