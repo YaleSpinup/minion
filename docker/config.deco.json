@@ -25,8 +25,7 @@
       "type": "database",
       "config": {
         "endpointTemplate": "{{ .databaserunner_endpoint_tmpl }}",
-        "token": "{{ .databaserunner_token }}",
-        "auth_header": "X-Auth-Token"
+        "token": "{{ .databaserunner_token }}"
       }
     },
     "serviceRunner": {
