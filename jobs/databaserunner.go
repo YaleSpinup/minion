@@ -105,7 +105,7 @@ func (r *DatabaseRunner) Run(ctx context.Context, account string, parameters int
 
 	switch action {
 	case "stop", "start":
-		j, err := json.Marshal(map[string]string{"State": action})
+		j, err := json.Marshal(map[string]string{"state": action})
 		if err != nil {
 			return "", err
 		}
