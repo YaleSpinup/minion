@@ -40,7 +40,7 @@ A dummy runner job just attempts to execute a template with the given account na
 {
     "description": "Do some dumb thing to my server",
     "details": {
-        "runner": "dummyRunner",
+        "runner": "dummyRunner"
     },
     "group": "space-xy",
     "id": "6bcfa79f-615e-470d-97c1-687f3357497d",
@@ -73,6 +73,28 @@ An instance runner job executes an action on an instance.  Currently supported a
     "name": "start-spinaaaabbbb11112222",
     "schedule_expression": "* * * ? *",
     "enabled": true
+}
+```
+### database
+A Database runner job executes an action against a database instance. Currently supported actions are `stop` and `start`.
+
+#### example database job
+
+```json
+{
+    "job": {
+        "description": "Stop database",
+        "details": {
+            "runner": "databaseRunner",
+            "database_action": "stop",
+            "instance_id": "spintst-db000b36"
+        },
+        "group": "test_rds",
+        "modified_by": "someone",
+        "name": "stop-tst",
+        "schedule_expression": "* * * * *",
+        "enabled": true
+    }
 }
 ```
 
@@ -112,7 +134,7 @@ POST `/v1/minion/{account}/jobs/space-xy`
     "job": {
         "description": "Do some dumb thing to my server",
         "details": {
-            "runner": "dummyRunner",
+            "runner": "dummyRunner"
         },
         "group": "space-xy",
         "modified_by": "someone",
@@ -140,7 +162,7 @@ POST `/v1/minion/{account}/jobs/space-xy`
     "job": {
         "description": "Do some dumb thing to my server",
         "details": {
-            "runner": "dummyRunner",
+            "runner": "dummyRunner"
         },
         "group": "space-xy",
         "id": "6bcfa79f-615e-470d-97c1-687f3357497d",
@@ -175,7 +197,7 @@ PUT `/v1/minion/{account}/jobs/space-xy/6bcfa79f-615e-470d-97c1-687f3357497d`
     "job": {
         "description": "Do some dumb thing to my server",
         "details": {
-            "runner": "dummyRunner",
+            "runner": "dummyRunner"
         },
         "group": "space-xy",
         "id": "6bcfa79f-615e-470d-97c1-687f3357497d",
@@ -204,7 +226,7 @@ PUT `/v1/minion/{account}/jobs/space-xy/6bcfa79f-615e-470d-97c1-687f3357497d`
     "job": {
         "description": "Do some dumb thing to my server",
         "details": {
-            "runner": "dummyRunner",
+            "runner": "dummyRunner"
         },
         "group": "space-xy",
         "id": "6bcfa79f-615e-470d-97c1-687f3357497d",
@@ -265,7 +287,7 @@ GET `/v1/minion/{account}/jobs/space-xy/6bcfa79f-615e-470d-97c1-687f3357497d`
     "job": {
         "description": "Do some dumb thing to my server",
         "details": {
-            "runner": "dummyRunner",
+            "runner": "dummyRunner"
         },
         "group": "space-xy",
         "id": "6bcfa79f-615e-470d-97c1-687f3357497d",

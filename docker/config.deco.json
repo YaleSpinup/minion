@@ -21,6 +21,13 @@
         "token": "{{ .instancerunner_token }}"
       }
     },
+    "databaseRunner": {
+      "type": "database",
+      "config": {
+        "endpointTemplate": "{{ .databaserunner_endpoint_tmpl }}",
+        "token": "{{ .databaserunner_token }}"
+      }
+    },
     "serviceRunner": {
       "type": "service",
       "config": {
