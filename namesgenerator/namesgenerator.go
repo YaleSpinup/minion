@@ -1366,7 +1366,6 @@ var (
 		"kay",
 		"jason",
 		"andrew",
-		"darryl",
 		"sandy",
 	}
 )

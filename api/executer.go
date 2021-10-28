@@ -76,6 +76,8 @@ func (e *executer) loop(ctx context.Context, interval time.Duration) {
 }
 
 func (e *executer) run(ctx context.Context, runner jobs.Runner, j *jobs.Job) {
+	defer timeTrack("executer.run()", time.Now())
+
 	logctx, closeLog := context.WithCancel(context.Background())
 	defer closeLog()
 

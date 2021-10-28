@@ -25,6 +25,15 @@
         "auth_header": "X-Auth-Token",
         "token": "zzzzz",
         "encrypt_token": true
+      },
+      "taskRunner": {
+        "type": "task",
+        "config": {
+          "endpointTemplate": "http://127.0.0.1:8080/v1/ecs/{{.Account}}/cluster/{{.Cluster}}/taskdefs/{{ .Name }}/tasks",
+          "auth_header": "X-Auth-Token",
+          "token": "zzzzz",
+          "encrypt_token": true
+        }
       }
     }
   },

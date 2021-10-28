@@ -4,6 +4,43 @@
 
 Minion is a naive distributed job scheduler.
 
+- [minion](#minion)
+  - [Endpoints](#endpoints)
+  - [Usage](#usage)
+  - [Authentication](#authentication)
+  - [Job Types](#job-types)
+    - [dummy](#dummy)
+      - [example dummy job](#example-dummy-job)
+    - [instance](#instance)
+      - [example instance job](#example-instance-job)
+    - [database](#database)
+      - [example database job](#example-database-job)
+    - [service](#service)
+      - [example service job](#example-service-job)
+    - [task](#task)
+      - [example task job](#example-task-job)
+  - [Create a Job](#create-a-job)
+    - [Request](#request)
+    - [Response](#response)
+  - [Update a Job](#update-a-job)
+    - [Request](#request-1)
+    - [Response](#response-1)
+  - [List Jobs in an account](#list-jobs-in-an-account)
+    - [Response](#response-2)
+  - [List Jobs in a space](#list-jobs-in-a-space)
+    - [Response](#response-3)
+  - [Get a Job](#get-a-job)
+  - [Delete a Job](#delete-a-job)
+  - [Delete all jobs in a group](#delete-all-jobs-in-a-group)
+  - [Run a Job](#run-a-job)
+  - [IAM permissions](#iam-permissions)
+    - [S3 repository Example](#s3-repository-example)
+      - [create `minion-dev-bucket` and create a user with the policy](#create-minion-dev-bucket-and-create-a-user-with-the-policy)
+    - [Cloudwatchlogs Example](#cloudwatchlogs-example)
+      - [policy example for cloudwatchlogs-creater-consumer](#policy-example-for-cloudwatchlogs-creater-consumer)
+  - [Author](#author)
+  - [License](#license)
+
 ## Endpoints
 
 ```
@@ -118,6 +155,31 @@ A service runner job executes an action on a container service.  Currently suppo
     "modified_at": "2020-02-28T18:14:26Z",
     "modified_by": "someone",
     "name": "service-scale-job-test",
+    "schedule_expression": "00 18 * * *",
+    "enabled": true
+}
+```
+
+### task
+
+A task runner job executes an action on a container taskdef.  Currently supported action is `run`.
+
+#### example task job
+
+```json
+{
+    "description": "Run 3 tasks from a taskdef",
+    "details": {
+        "task_action": "run",
+        "task_cluster": "spindev-cluster-123",
+        "task_name": "spindev-svc-123",
+        "count": "0",
+        "runner": "taskRunner"
+    },
+    "id": "a8d4d056-fbfe-4d7d-beb4-a64780c6d98c",
+    "modified_at": "2021-10-28T18:14:26Z",
+    "modified_by": "someone_else",
+    "name": "task-run-job-test",
     "schedule_expression": "00 18 * * *",
     "enabled": true
 }
