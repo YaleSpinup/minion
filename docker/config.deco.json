@@ -35,6 +35,14 @@
         "token": "{{ .servicerunner_token }}",
         "encrypt_token": true
       }
+    },
+    "taskRunner": {
+      "type": "task",
+      "config": {
+        "endpointTemplate": "{{ .taskrunner_endpoint_tmpl }}",
+        "token": "{{ .taskrunner_token }}",
+        "encrypt_token": true
+      }
     }
   },
   "jobsRepository": {

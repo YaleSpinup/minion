@@ -66,7 +66,7 @@ func TestNewTaskRunner(t *testing.T) {
 			},
 		},
 		{
-			name: "endpoint and endpoint_template wrong type",
+			name: "endpoint and endpoint_template",
 			args: args{
 				config: map[string]interface{}{
 					"endpoint":         "http://127.0.0.1:8080/v1/ecs/acct1/cluster/clu1/taskdefs/td1/tasks",

@@ -32,8 +32,8 @@ type TaskRunnerRunInput struct {
 }
 
 // NewTaskRunner creates and configures a new task runner.  An endpoint or endpoint template is required
-// the endpoint and endpoint template are not currently validated but this can/should be done in the future.  If a
-// a token is passed, it will be configured but is not required.
+// the endpoint and endpoint template are not currently validated but this can/should be done in the future.
+// If a token is passed, it will be configured but is not required.a
 func NewTaskRunner(config map[string]interface{}) (*TaskRunner, error) {
 	log.Debug("creating new task job runner")
 
