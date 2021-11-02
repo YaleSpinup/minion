@@ -45,6 +45,8 @@ func (l *loader) loop(ctx context.Context) {
 }
 
 func (l *loader) run(ctx context.Context) error {
+	defer timeTrack("loader.run()", time.Now())
+
 	log.Infof("%s running jobs loader", l.id)
 
 	l.jobsCache.Mux.Lock()

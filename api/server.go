@@ -442,6 +442,14 @@ func newJobRunners(org string, runners map[string]common.JobRunner) (map[string]
 			jobRunners[name] = r
 
 			log.Infof("configured new service runner %s", name)
+		case "task":
+			r, err := jobs.NewTaskRunner(c.Config)
+			if err != nil {
+				return nil, err
+			}
+			jobRunners[name] = r
+
+			log.Infof("configured new task runner %s", name)
 		case "database":
 			r, err := jobs.NewDatabaseRunner(c.Config)
 			if err != nil {
@@ -485,4 +493,8 @@ func reportEvent(msg string, level report.Level) {
 			log.Errorf("Failed to report event (%s) %s", msg, err.Error())
 		}
 	}
+}
+
+func timeTrack(name string, start time.Time) {
+	log.Infof("%s - %s", name, time.Since(start).String())
 }

@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// start the scheduler loop
 func (s *scheduler) start(ctx context.Context) error {
 	log.Infof("%s: scheduler starting", s.id)
 
@@ -18,6 +19,7 @@ func (s *scheduler) start(ctx context.Context) error {
 	return nil
 }
 
+// loop runs the scheduler every minute
 func (s *scheduler) loop(ctx context.Context) {
 	ticker := time.NewTicker(1 * time.Minute)
 	for {
@@ -34,7 +36,11 @@ func (s *scheduler) loop(ctx context.Context) {
 	}
 }
 
+// run does the scheduling of jobs.  first we aquire a central lock, then determines the minute we are in
+// and looks for any enabled job in the cache which should be scheduled now.  if any are found, they are enqueued.
 func (s *scheduler) run(ctx context.Context, now time.Time) {
+	defer timeTrack("scheduler.run()", time.Now())
+
 	log.Debugf("%s acquiring lock", s.id)
 	if err := s.locker.Lock(strconv.FormatInt(now.Unix(), 10), s.id); err != nil {
 		log.Warnf("%s failed to aquire lock, moving on...", s.id)
