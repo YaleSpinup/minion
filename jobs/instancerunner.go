@@ -12,12 +12,15 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type InstanceRunner struct {
 	Endpoint         string
 	EndpointTemplate string
 	Token            string
+	Encrypt          bool
+	AuthHeader       string
 }
 
 // NewInstanceRunner creates and configures a new instance runner.  An endpoint or endpoint template is required
@@ -42,6 +45,16 @@ func NewInstanceRunner(config map[string]interface{}) (*InstanceRunner, error) {
 		log.Warn("both endpoint and endpoint_template are set, only endpoint will be used")
 	}
 
+	var encrypt bool
+	if e, ok := config["encrypt_token"].(bool); ok {
+		encrypt = e
+	}
+
+	authHeader := "X-Auth-Token"
+	if h, ok := config["auth_header"].(string); ok {
+		authHeader = h
+	}
+
 	var token string
 	if v, ok := config["token"].(string); ok {
 		token = v
@@ -51,6 +64,8 @@ func NewInstanceRunner(config map[string]interface{}) (*InstanceRunner, error) {
 		Endpoint:         endpoint,
 		EndpointTemplate: endpointTemplate,
 		Token:            token,
+		Encrypt:          encrypt,
+		AuthHeader:       authHeader,
 	}, nil
 }
 
@@ -119,7 +134,19 @@ func (r *InstanceRunner) Run(ctx context.Context, account string, parameters int
 		}
 
 		if r.Token != "" {
-			req.Header.Set("X-Auth-Token", r.Token)
+			log.Debugf("setting token header %s for %s %s", r.AuthHeader, action, instanceID)
+			if r.Encrypt {
+				e, err := bcrypt.GenerateFromPassword([]byte(r.Token), 6)
+				if err != nil {
+					return "", NewRunnerError(ErrExecFailure, "unable to hash token", err)
+				}
+
+				log.Debug("token is encrypted")
+
+				req.Header.Set(r.AuthHeader, string(e))
+			} else {
+				req.Header.Set(r.AuthHeader, r.Token)
+			}
 		}
 
 		log.Infof("instance runner executing '%s' on %s", action, instanceID)
