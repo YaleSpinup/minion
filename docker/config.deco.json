@@ -18,7 +18,8 @@
       "type": "instance",
       "config": {
         "endpointTemplate": "{{ .instancerunner_endpoint_tmpl }}",
-        "token": "{{ .instancerunner_token }}"
+        "token": "{{ .instancerunner_token }}",
+        "encrypt_token": true
       }
     },
     "databaseRunner": {
