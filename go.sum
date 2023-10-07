@@ -33,8 +33,8 @@ cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/YaleSpinup/apierror v0.1.0 h1:XiL1AQTsZ9ariWE1BngpDeG+YZjQFX/a/OX25AkWQj8=
-github.com/YaleSpinup/apierror v0.1.0/go.mod h1:m68Zb59VAV7MUGwzcYe6vb/FU/DO/QGMbFumkHoyQMQ=
+github.com/YaleSpinup/apierror v0.1.1 h1:Zpb/H6Zcu5A4PKMhER5XZyWuzt84t5MvVq90VBUnzRQ=
+github.com/YaleSpinup/apierror v0.1.1/go.mod h1:LV0WGRJVWuvfSQo4fMx8hd0MV7thE2n5Mh2syENWG7k=
 github.com/YaleSpinup/eventreporter v0.1.0 h1:IpD23wBJ4/MhkYQYlq5QnYcJGVIKIeBJUF8hI96wGaY=
 github.com/YaleSpinup/eventreporter v0.1.0/go.mod h1:vkxWM+5iz+Vz8pR8eN+muB3nxPgckrX9++YYbbxUEDU=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
