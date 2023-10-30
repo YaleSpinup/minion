@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go v1.45.24
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/google/uuid v1.3.1
+	github.com/google/uuid v1.4.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/onsi/ginkgo v1.16.5 // indirect
