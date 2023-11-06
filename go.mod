@@ -10,7 +10,7 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/uuid v1.3.1
 	github.com/gorilla/handlers v1.5.1
-	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/mux v1.8.1
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.17.0
