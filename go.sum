@@ -1,5 +1,5 @@
-github.com/YaleSpinup/apierror v0.1.1 h1:Zpb/H6Zcu5A4PKMhER5XZyWuzt84t5MvVq90VBUnzRQ=
-github.com/YaleSpinup/apierror v0.1.1/go.mod h1:LV0WGRJVWuvfSQo4fMx8hd0MV7thE2n5Mh2syENWG7k=
+github.com/YaleSpinup/apierror v0.1.5 h1:ZW59fFo+bO30GpQ3TvGNBlY7kdX8L9KIEkaztsKnwiY=
+github.com/YaleSpinup/apierror v0.1.5/go.mod h1:u2smW7kQNefbVbBpNNvHQj9TjLZdVC+fKxwKNtLIhb4=
 github.com/YaleSpinup/eventreporter v0.1.1 h1:/3Gipd8pViLyRF9AFAaBoKwHxPCKwoTiZfJysXWw6Xs=
 github.com/YaleSpinup/eventreporter v0.1.1/go.mod h1:BLlbOvNpL9s4nFTsIsEvWEpMRwfExcNpB14e6pdDhVg=
 github.com/aws/aws-sdk-go v1.45.24 h1:TZx/CizkmCQn8Rtsb11iLYutEQVGK5PK9wAhwouELBo=
