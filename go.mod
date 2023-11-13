@@ -3,7 +3,7 @@ module github.com/YaleSpinup/minion
 go 1.21
 
 require (
-	github.com/YaleSpinup/apierror v0.1.1
+	github.com/YaleSpinup/apierror v0.1.5
 	github.com/YaleSpinup/eventreporter v0.1.1
 	github.com/aws/aws-sdk-go v1.45.24
 	github.com/go-redis/redis v6.15.9+incompatible
