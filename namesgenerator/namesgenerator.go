@@ -1369,7 +1369,7 @@ var (
 		"sandy",
 		"tristen",
 		"kraig",
-		"tyler"
+		"tyler",
 	}
 )
 
